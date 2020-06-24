@@ -353,6 +353,287 @@ class RDKitMol(object):
     def GetDistanceMatrix(self, id: int = 0) -> np.ndarray:
         return Chem.rdmolops.Get3DDistanceMatrix(self._rd_mol, confId=id)
 
+
+class RDKitConf(object):
+    """
+    A wrapper for rdchem.Conformer.
+
+    The method nomenclature follows the Camel style to be consistent with RDKit.
+    """
+    def __init__(self, conf):
+        self._conf = conf
+        self._rd_mol = conf.GetOwningMol()
+        for attr in dir(conf):
+            if not attr.startswith('_') and not hasattr(self, attr):
+                setattr(self, attr, getattr(self._conf, attr,))
+
+    @classmethod
+    def FromConf(cls,
+                 conf: 'rdkit.Chem.rdchem.Conformer',
+                 ) -> 'RDKitConf':
+        """
+        Convert a RDKit Chem.rdchem.Conformer to a RDKitConf. This allows a more
+        capable and flexible Conformer class.
+
+        Args:
+            conf (Chem.rdchem.Conformer): A RDKit Conformer instance to be converted.
+
+        Returns:
+            RDKitConf: The conformer corresponding to the RDKit Conformer in RDKitConf
+        """
+        return cls(conf)
+
+    @classmethod
+    def FromRDMol(cls,
+                  rd_mol: 'rdkit.Chem.rdchem.Mol',
+                  id: int = 0,
+                  ) -> 'RDkitConf':
+        """
+        Get a RDKitConf instance from a Chem.rdchem.Mol instance.
+
+        Args:
+            rd_mol (Chem.rdchem.Mol): a Molecule in RDKit Default format.
+            id (int): The id of the conformer to be extracted from the molecule.
+
+        Returns:
+            RDKitConf: A Conformer in RDKitConf of the given molecule
+        """
+        return cls(rd_mol.GetConformer(id))
+
+    @classmethod
+    def FromRDKitMol(cls,
+                     rd_mol: 'RDKitMol',
+                     id: int = 0,
+                     ) -> 'RDkitConf':
+        """
+        Get a RDKitConf instance from a RDKitMol instance. The owning molecule
+        of the generated conformer is RDKitMol instead of Chem.rdchem.Mol.
+
+        Args:
+            rd_mol (RDKitMol): a Molecule in RDKitMol.
+            id (int): The id of the conformer to be extracted from the molecule.
+
+        Returns:
+            RDKitConf: A Conformer in RDKitConf of the given molecule
+        """
+        return rd_mol.GetConformer(id)
+
+    def GetOwningMol(self):
+        """
+        Get the owning molecule of the conformer.
+
+        Returns:
+            Union[Chem.rdchem.Mol, RDKitMol]: The owning molecule
+        """
+        return self._rd_mol
+
+    def HasOwningMol(self):
+        """
+        Whether the conformer has a owning molecule.
+
+        Returns:
+            bool: ``True`` if the conformer has a owning molecule
+        """
+        if self._rd_mol:
+            return True
+        return False
+
+    def SetOwningMol(self,
+                     rd_mol: Union[RDKitMol, Chem.rdchem.Mol]):
+        """
+        Set the owning molecule of the conformer. It can be either RDKitMol
+        or Chem.rdchem.Mol.
+
+        Args:
+            rd_mol: Union[RDKitMol, Chem.rdchem.Mol] The owning molecule of the conformer.
+
+        Raises:
+            ValueError: Not a valid ``rd_mol`` input, when giving something else.
+        """
+        if isinstance(rd_mol, (RDKitMol, Mol)):
+            self._rd_mol = rd_mol
+        else:
+            raise ValueError('Not a valid molecule')
+
+    def SetPositions(self,
+                     coords: Union[tuple, list]):
+        """
+        Set the Positions of atoms of the conformer.
+
+        Args:
+            rd_mol: Union[RDKitMol, Chem.rdchem.Mol] The owning molecule of the conformer.
+
+        Raises:
+            ValueError: Not a valid ``rd_mol`` input, when giving something else.
+        """
+        try:
+            num_atoms = coords.shape[0]
+        except AttributeError:
+            try:
+                num_atoms = len(coords)
+                for i in range(num_atoms):
+                    self._conf.SetAtomPosition(i, coords[i])
+            except:
+                raise ValueError(
+                    'Given coords is not valid for the conformer.')
+        else:
+            for i in range(num_atoms):
+                self._conf.SetAtomPosition(i, coords[i, :])
+
+    def GetTorsionDeg(self,
+                      torsion: list,
+                      ) -> float:
+        """
+        Get the dihedral angle of the torsion in degrees. The torsion can be defined
+        by any atoms in the molecule (not necessarily bonded atoms.)
+
+        Args:
+            torsion (list): A list of four atom indexes.
+
+        Returns:
+            float: The dihedral angle of the torsion.
+        """
+        return rdMT.GetDihedralDeg(self._conf, *torsion)
+
+    def SetTorsionDeg(self,
+                      torsion: list,
+                      degree: Union[float, int]):
+        """
+        Set the dihedral angle of the torsion in degrees. The torsion can only be defined
+        by a chain of bonded atoms.
+
+        Args:
+            torsion (list): A list of four atom indexes.
+            degree (float, int): The dihedral angle of the torsion.
+        """
+        rdMT.SetDihedralDeg(self._conf, *torsion, degree)
+
+    def GetTorsionRad(self,
+                      torsion: list):
+        """
+        Get the dihedral angle of the torsion in rad. The torsion can be defined
+        by any atoms in the molecule (not necessarily bonded atoms.)
+
+        Args:
+            torsion (list): A list of four atom indexes.
+
+        Returns:
+            float: The dihedral angle of the torsion in rad.
+        """
+        return rdMT.GetDihedralRad(self._conf, *torsion)
+
+    def SetTorsionRad(self,
+                      torsion: list,
+                      rad: Union[float, int]):
+        """
+        Set the dihedral angle of the torsion in rad. The torsion can only be defined
+        by a chain of bonded atoms.
+
+        Args:
+            torsion (list): A list of four atom indexes.
+            degree (float, int): The dihedral angle of the torsion in rad.
+        """
+        rdMT.SetDihedralRad(self._conf, *torsion, rad)
+
+    def GetTorsionalModes(self,
+                          indexed_1: bool = False):
+        """
+        Get all of the torsional modes (rotors) of the Conformer. This information
+        is obtained from its owning molecule.
+
+        Args:
+            indexed_1: The atom index in RDKit starts from 0. If you want to have
+                       indexed 1 atom indexes, please set this argument to ``True``.
+
+        Returns:
+            list: A list of four-atom-indice to indicating the torsional modes.
+        """
+        try:
+            if not indexed_1:
+                return self._torsions
+            else:
+                return [[ind + 1 for ind in tor] for tor in self._torions]
+        except AttributeError:
+            # _torsions is not defined
+            self._torsions = find_internal_torsions(self._rd_mol)
+            return self._torsions
+
+    def SetTorsionalModes(self,
+                          torsions: Union[list, tuple]):
+        """
+        Set the torsional modes (rotors) of the Conformer. This is useful when the
+        default torsion is not correct.
+
+        Args:
+            torsions (Union[list, tuple]): A list of four-atom-lists indicating the torsional modes.
+
+        Raises:
+            ValueError: The torsional mode used is not valid.
+        """
+        if isinstance(torsions, (list, tuple)):
+            self._torstions = torsions
+        else:
+            raise ValueError('Invalid torsional mode input.')
+
+    def GetAllTorsionsDeg(self) -> list:
+        """
+        Get the dihedral angles of all torsional modes (rotors) of the Conformer. The sequence of the
+        values are corresponding to the torsions of the molecule (``GetTorsionalModes``).
+
+        Returns:
+            list: A list of dihedral angles of all torsional modes.
+        """
+        return [self.GetTorsionDeg(tor) for tor in self.GetTorsionalModes()]
+
+    def SetAllTorsionsDeg(self, angles: list):
+        """
+        Set the dihedral angles of all torsional modes (rotors) of the Conformer. The sequence of the
+        values are corresponding to the torsions of the molecule (``GetTorsionalModes``).
+
+        Args:
+            angles (list): A list of dihedral angles of all torsional modes.
+        """
+        if len(angles) != len(self.GetTorsionalModes()):
+            raise ValueError('The length of angles is not equal to the length of torsional modes')
+        for angle, tor in zip(angles, self.GetTorsionalModes()):
+            try:
+                self.SetTorsionDeg(tor, angle)
+            except RuntimeError as e:
+                print(e)
+                raise
+
+    def GetVdwMatrix(self):
+        try:
+            # No default Vdw matrix is available
+            return self._vdw_mat
+        except AttributeError:
+            try:
+                # Try to obtained from its Owning molecule
+                self._vdw_mat = self._rd_mol.GetVdwMatrix()
+                return self._vdw_mat
+            except AttributeError:
+                raise AttributeError("The Van de Waals Matrix is not set and the backend Molecule is "
+                                     "rdchem.Mol instead of RDKitMol, which does not have the matrix either."
+                                     "You can either manually set it or switch backend using ``SetOwningMol().``")
+
+    def SetVdwMatrix(self, vdw_mat: np.ndarray):
+        self._vdw_mat = vdw_mat
+
+    def GetDistanceMatrix(self):
+        try:
+            return self._rd_mol.GetDistanceMatrix(id=self.GetId())
+        except AttributeError:
+            raise AttributeError("The Distance Matrix is not set and the backend Molecule is "
+                                 "rdchem.Mol instead of RDKitMol, which does not have the matrix either."
+                                 "You can switch backend using ``SetOwningMol().``")
+
+    def HasCollidingAtoms(self):
+        dist_mat = np.triu(self.GetDistanceMatrix())
+        # If the distance is smaller than threshold defined,
+        # The atom has a high chance to collide.
+        return not np.all(self.GetVdwMatrix() <= dist_mat)
+
+
 def find_internal_torsions(rd_mol) -> list:
     """
     Find the internal torsions from RDkit molecule.
