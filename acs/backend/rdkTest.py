@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 
 """
-This module contains unit tests of the :mod:`ccg.backend` module.
+This module contains unit tests of the :mod:`acs.backend.rdk` module.
 """
 
 import unittest
 
 import numpy as np
-import pybel
 from rdkit import Chem
+import pybel
 
-from ccg.backend import rdk
+from acs.backend import rdk
 
 
 class RDKitMolTest(unittest.TestCase):
