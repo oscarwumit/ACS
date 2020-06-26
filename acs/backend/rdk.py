@@ -74,6 +74,7 @@ class RDKitMol(object):
                 setattr(self, attr, getattr(self._rd_mol, attr,))
             elif attr in KEEP_RDMOL_ATTRIBUTES:
                 setattr(self, attr, getattr(self._rd_mol, attr,))
+        self.SetAtomMapNumbers()
 
     @ classmethod
     def FromSmiles(cls,
@@ -356,6 +357,13 @@ class RDKitMol(object):
     def GetDistanceMatrix(self, id: int = 0) -> np.ndarray:
         return Chem.rdmolops.Get3DDistanceMatrix(self._rd_mol, confId=id)
 
+    def SetAtomMapNumbers(self):
+        """
+        Set the atom index to atom number, so that one can easily view the atom index from a 2D graph.
+        """
+        for ind in range(self.GetNumAtoms()):
+            atom = self.GetAtomWithIdx(ind)
+            atom.SetProp('molAtomMapNumber', str(atom.GetIdx()))
 
     def GetCovalentMatrix(self) -> Optional[np.ndarray]:
         """
