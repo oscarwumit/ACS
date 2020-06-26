@@ -38,6 +38,9 @@ ORDERS = {1: BondType.SINGLE, 2: BondType.DOUBLE, 3: BondType.TRIPLE, 1.5: BondT
 VDW_RADII = {'H': 1.09, 'C': 1.7, 'N': 1.55, 'O': 1.52,
              1: 1.2, 6: 1.7, 7: 1.55, 8: 1.52}
 
+COVALENT_RADII = {'H': 0.31, 'C': 0.76, 'N': 0.71, 'O': 0.66,
+                  1: 0.31, 6: 0.76, 7: 0.71, 8: 0.66}
+
 # The rotational bond definition in RDkit
 # It is the same as rdkit.Chem.Lipinski import RotatableBondSmarts
 ROTATABLE_BOND_SMARTS = Chem.MolFromSmarts('[!$(*#*)&!D1]-&!@[!$(*#*)&!D1]')
@@ -352,6 +355,44 @@ class RDKitMol(object):
 
     def GetDistanceMatrix(self, id: int = 0) -> np.ndarray:
         return Chem.rdmolops.Get3DDistanceMatrix(self._rd_mol, confId=id)
+
+
+    def GetCovalentMatrix(self) -> Optional[np.ndarray]:
+        """
+        Get the derived covalent matrix. The dervied covalent matrix can be used to analyze
+        bond connectivity. More information can be found from ``generate_covalent_mat``.
+
+        Returns:
+            Optional[np.ndarray]: A 2D array of the derived covalent matrix, if the
+                                  the matrix exists, otherwise ``None``.
+        """
+        try:
+            return self._colv_mat
+        except AttributeError:
+            self.SetCovalentMatrix()
+            return self._colv_mat
+
+    def SetCovalentMatrix(self,
+                     threshold: float = 1.0,
+                     covalent_radii: dict = COVALENT_RADII):
+        """
+        Set the derived colvalent matrix. The derived covalent matrix is a upper
+        triangle matrixcalculated from a threshold usually around 1.0 and covalent
+        Radii. Its diagonal elements are all zeros. The element (i, j) is calculated by
+        threshold * sum( R(atom i) + R(atom j) ). If two atoms are bonded, the value is
+        set to be 0.
+
+        Args:
+            threshold (float): The threshold used to calculate the derived covalent
+                               matrix. A larger value results in a matrix with larger values;
+                               When compared with distance matrix, it may overestiate the
+                               overlapping between atoms. The default value is 1.0.
+            covalent_radii (dict): A dict stores the covalent radii of different elements.
+
+        Raises:
+            ValueError: Invalid threshold is supplied.
+        """
+        self._colv_mat = generate_covalent_mat(self, threshold, covalent_radii)
 
 
 class RDKitConf(object):
@@ -728,3 +769,51 @@ def generate_vdw_mat(rd_mol,
                     (vdw_radii[atom1.GetAtomicNum()] +
                         vdw_radii[atom2.GetAtomicNum()])
     return vdw_mat
+
+
+def generate_covalent_mat(rd_mol,
+                          threshold: float = 1.0,
+                          covalent_radii: dict = COVALENT_RADII):
+    """
+    Generate a derived covalent matrix. The derived covalent matrix is a upper
+    triangle matrixcalculated from a threshold usually around 1.0 and covalent
+    Radii. Its diagonal elements are all zeros. The element (i, j) is calculated by
+    threshold * sum( R(atom i) + R(atom j) ). If two atoms are bonded, the value is
+    set to be 0.
+    length.
+
+    Args:
+        threshold (float): The threshold used to calculate the derived covalent_radii
+                            matrix. A larger value results in a matrix with larger values;
+                            When compared with distance matrix, it may overestiate the
+                            overlapping between atoms. The default value is 0.4.
+        covalent_radii (dict): A dict stores the covalent_radii radii of different elements.
+
+    Raises:
+        ValueError: Invalid threshold is supplied.
+    """
+    if threshold <= 0:
+        raise ValueError("The provided threshold is invalid.")
+
+    # Initialize a vdw matrix
+    num_atom = rd_mol.GetNumAtoms()
+    covl_mat = np.zeros((num_atom, num_atom))
+    # Get all of the atom index
+    atom_idx_list = range(num_atom)
+
+    for atom1_ind in atom_idx_list:
+
+        atom1 = rd_mol.GetAtomWithIdx(atom1_ind)
+        bonded_atom_number = [nb.GetIdx() for nb in atom1.GetNeighbors()]
+
+        for atom2_ind in atom_idx_list[atom1_ind + 1:]:
+            if atom2_ind in bonded_atom_number:
+                # Set a ridiculously small number to bonded atoms,
+                # So that they won't arise the collision detector
+                covl_mat[atom1_ind, atom2_ind] = 0.
+            else:
+                atom2 = rd_mol.GetAtomWithIdx(atom2_ind)
+                covl_mat[atom1_ind, atom2_ind] = threshold * \
+                    (covalent_radii[atom1.GetAtomicNum()] +
+                     covalent_radii[atom2.GetAtomicNum()])
+    return covl_mat
