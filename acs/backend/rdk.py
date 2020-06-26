@@ -515,19 +515,7 @@ class RDKitConf(object):
         Raises:
             ValueError: Not a valid ``rd_mol`` input, when giving something else.
         """
-        try:
-            num_atoms = coords.shape[0]
-        except AttributeError:
-            try:
-                num_atoms = len(coords)
-                for i in range(num_atoms):
-                    self._conf.SetAtomPosition(i, coords[i])
-            except:
-                raise ValueError(
-                    'Given coords is not valid for the conformer.')
-        else:
-            for i in range(num_atoms):
-                self._conf.SetAtomPosition(i, coords[i, :])
+        set_conformer_coordinates(self._conf, coords)
 
     def GetTorsionDeg(self,
                       torsion: list,
@@ -825,3 +813,29 @@ def generate_covalent_mat(rd_mol,
                     (covalent_radii[atom1.GetAtomicNum()] +
                      covalent_radii[atom2.GetAtomicNum()])
     return covl_mat
+
+
+def set_conformer_coordinates(conf: Union[Conformer, 'RDKitConf'],
+                              coords: Union[tuple, list, np.ndarray]):
+    """
+    Set the Positions of atoms of the conformer.
+
+    Args:
+        conf (Union[Conformer, 'RDKitConf']): The conformer to be set.
+        coords (Union[tuple, list, np.ndarray]): The coordinates to be set.
+
+    Raises:
+        ValueError: Not a valid ``rd_mol`` input, when giving something else.
+    """
+    try:
+        num_atoms = coords.shape[0]
+    except AttributeError:
+        try:
+            num_atoms = len(coords)
+            for i in range(num_atoms):
+                conf.SetAtomPosition(i, coords[i])
+        except:
+            raise ValueError('Given coords is not valid for the conformer.')
+    else:
+        for i in range(num_atoms):
+            conf.SetAtomPosition(i, coords[i, :])
