@@ -152,7 +152,7 @@ class RDKitMol(object):
                     continue
                 if atoms_copy.index(atom1) < atoms_copy.index(atom2):
                     rd_mol.AddBond(
-                        atom_id_map[atom1.id], atom_id_map[atom2.id], orders[bond12.get_order_str()])
+                        atom_id_map[atom1.id], atom_id_map[atom2.id], ORDERS[bond12.get_order_str()])
 
         # Make editable mol and rectify the molecule
         rd_mol = rd_mol.GetMol()
