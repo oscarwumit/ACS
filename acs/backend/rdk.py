@@ -403,6 +403,67 @@ class RDKitMol(object):
         self._colv_mat = generate_covalent_mat(self, threshold, covalent_radii)
 
 
+class RDKitTS(RDKitMol):
+    """
+    This is a wrapper for Chem.rdchem.Mol / Chem.rdchem.RWMol to deal with Transition States
+    specifically. The major challenges here are 1. Molecule can not be perceived correctly at the
+    first time so we require the molecule instance to be editable; 2. The conformer can not be
+    easily embedded by the default method `Chem.AllChem.EmbedMolecule()` and `Chem.All.EmbedMultipleConfs`.
+    """
+
+    def __init__(self, rd_mol: Union[Mol, RWMol]):
+        """
+        Generate an RDKitMol Molecule instance from a RDKit Chem.rdchem.Mol / Chem.rdchem.RWMol molecule.
+
+        Args:
+            rd_mol Union[Mol, RWMol]: The RDKit Mol molecule to be converted.
+        """
+        # keep the link to original molecule so we can easily recover it if needed.
+        if isinstance(rd_mol, Mol):
+            self._rd_mol = RWMol(rd_mol)
+        elif isinstance(rd_mol, RWMol):
+            self._rd_mol = rd_mol
+        else:
+            raise ValueError(f'rd_mol should be rdkit.Chem.rdchem.Mol / RWMol. '
+                             f'Got: {type(rd_mol)}')
+        # Link methods of rdchem.Mol to the new instance
+        for attr in dir(self._rd_mol):
+            # Not reset private properties and repeated properties
+            if not attr.startswith('_') and not hasattr(self, attr):
+                setattr(self, attr, getattr(self._rd_mol, attr,))
+            elif attr in KEEP_RDMOL_ATTRIBUTES:
+                setattr(self, attr, getattr(self._rd_mol, attr,))
+        self.SetAtomMapNumbers()
+        # Perceive rings
+        Chem.GetSymmSSSR(self._rd_mol)
+
+    def EmbedConformer(self):
+        """
+        Embed a conformer to the RDKitMol. This will overwrite current conformers.
+        The coordinates will be initialized to zeros.
+        """
+        self._rd_mol.RemoveAllConformers()
+        num_atoms = self._rd_mol.GetNumAtoms()
+        conf = Conformer()
+        set_conformer_coordinates(conf, np.zeros((num_atoms, 3)))
+        self._rd_mol.AddConformer(conf)
+
+    def EmbedMultipleConfs(self, n: int = 1):
+        """
+        Embed conformers to the RDKitMol. This will overwrite current conformers.
+
+        Args:
+            n (int): The number of conformers to be embedded. The default is 1.
+        """
+        self._rd_mol.RemoveAllConformers()
+        num_atoms = self._rd_mol.GetNumAtoms()
+        for i in range(n):
+            conf = Conformer()
+            set_conformer_coordinates(conf, np.zeros((num_atoms, 3)))
+            conf.SetId(i)
+            self._rd_mol.AddConformer(conf)
+
+
 class RDKitConf(object):
     """
     A wrapper for rdchem.Conformer.
