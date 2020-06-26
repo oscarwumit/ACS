@@ -12,7 +12,7 @@ import numpy as np
 from rdkit import Chem
 from rdkit.Chem import AllChem
 from rdkit.Chem import rdMolTransforms as rdMT
-from rdkit.Chem.rdchem import BondType, Conformer, Mol
+from rdkit.Chem.rdchem import BondType, Conformer, Mol, RWMol
 
 # openbabel import is currently put behind rdkit.
 # This relates to https://github.com/rdkit/rdkit/issues/2292
@@ -499,7 +499,7 @@ class RDKitConf(object):
         Raises:
             ValueError: Not a valid ``rd_mol`` input, when giving something else.
         """
-        if isinstance(rd_mol, (RDKitMol, Mol)):
+        if isinstance(rd_mol, (RDKitMol, Mol, RWMol)):
             self._rd_mol = rd_mol
         else:
             raise ValueError('Not a valid molecule')
