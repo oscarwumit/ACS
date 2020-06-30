@@ -7,6 +7,7 @@ This module is majorly based on the converter.py from ARC/arc/species
 """
 
 from arkane.common import mass_by_symbol
+from ase import Atoms
 import os
 from typing import Optional
 
@@ -220,3 +221,17 @@ def get_most_common_isotope_for_element(element_symbol):
                 isotope_contribution = iso[2]
                 isotope = iso[0]
     return isotope
+
+
+def xyz_dict_to_ase_atom(xyz_dict):
+    """
+    Convert xyz_dict to ase atom object.
+    Args:
+        xyz_dict: ARC xyz dictionary.
+
+    Returns:
+        Atoms
+    """
+    symbol_str = ''.join(xyz_dict['symbols'])
+    coord_list = [tuple(v) for v in xyz_dict['coords']]
+    return Atoms(symbol_str, coord_list)
