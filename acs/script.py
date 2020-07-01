@@ -151,3 +151,50 @@ default_conformer_info_dict_for_initial_sp_screening = \
 'is_crashing': None, # bool
 'initial_screening_sp_energy': None,
 }
+
+
+g16_slurm_array_script = """#!/bin/bash -l
+#SBATCH -p normal
+#SBATCH -J opt{name}
+#SBATCH -N 1
+#SBATCH -n 40
+#SBATCH --time=5-0:00:00
+#SBATCH --mem-per-cpu=9000
+#SBATCH --array=0-{last_job_num}
+#SBATCH --exclusive
+
+export g16root=/home/gridsan/oscarwu/GRPAPI/Software
+export PATH=$g16root/g16/:$g16root/gv:$PATH
+echo "Gaussian PATH"
+which g16
+
+jnum=$SLURM_ARRAY_TASK_ID
+fin=$(echo ${jnum}_*.gjf)
+#fout="${fin%.*}".out
+
+input=`basename $fin .gjf`
+echo "============================================================"
+echo "Job ID : $SLURM_JOB_ID"
+echo "Job Name : $SLURM_JOB_NAME"
+echo "task ID: $SLURM_ARRAY_TASK_ID"
+echo "Starting on : $(date)"
+echo "Running on node : $SLURMD_NODENAME"
+echo "Current directory : $(pwd)"
+echo "============================================================"
+
+export GAUSS_SCRDIR=/home/gridsan/oscarwu/scratch/$SLURM_JOB_NAME-$SLURM_JOB_ID
+
+export GAUSS_SCRDIR
+. $g16root/g16/bsd/g16.profile
+
+echo "GAUSS_SCRDIR : $GAUSS_SCRDIR"
+mkdir -p $GAUSS_SCRDIR
+chmod 750 $GAUSS_SCRDIR
+
+g16 < $input.gjf > $input.log
+
+rm -rf $GAUSS_SCRDIR
+
+
+
+"""

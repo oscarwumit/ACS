@@ -13,7 +13,7 @@ import seaborn as sns
 from matplotlib.patches import Rectangle
 
 from acs.common import read_yaml_file, write_yaml_file, mkdir, update_selected_keys, gen_gaussian_input_file
-from acs.script import default_job_info_dict_after_initial_sp_screening, \
+from acs.script import default_job_info_dict_after_initial_sp_screening, g16_slurm_array_script, \
     default_conformer_info_dict_after_initial_sp_screening
 
 
@@ -223,6 +223,7 @@ def main():
     opt_project_info['conformer_to_opt_hash_ids'] = tuple(conformer_to_opt_hash_ids)
 
     # 4. Generate opt input file
+    # 4.1 Gaussian input file
     charge = opt_project_info['species']['charge']
     multiplicity = opt_project_info['species']['multiplicity']
     is_ts = opt_project_info['species']['is_ts']
@@ -252,6 +253,16 @@ def main():
 
         with open(opt_input_file_path, 'w') as f:
             f.write(opt_input_file)
+
+    # 4.2 Array job submission script
+    # todo: make submission script more general
+    name = opt_project_info['species']['name']
+    last_job_num = len(opt_project_info['conformer_to_opt_hash_ids']) - 1
+    sub_script = g16_slurm_array_script.format(last_job_num=str(last_job_num), name=name)
+    sub_script_file_path = os.path.join(opt_dir, 'submit_g16_array.sh')
+    with open(sub_script_file_path, 'w') as f:
+        f.write(sub_script)
+
 
     # 5. save opt project info
     opt_project_info_path = os.path.join(opt_dir, 'opt_project_info.yml')
