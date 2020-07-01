@@ -15,6 +15,7 @@ from acs.common import read_yaml_file, write_yaml_file
 
 
 def geom_and_calc_producer(bookkeep):
+    # todo: different default values based on ts or non-ts
     charge = bookkeep['species'].get('charge', 0)
     multiplicity = bookkeep['species'].get('multiplicity', 2)
     reference = bookkeep['species'].get('reference', 'uhf')
@@ -95,16 +96,20 @@ def main():
     # 0. Parse input
     args = parse_command_line_arguments()
     screening_input_file = args.file
-    infput_file_dir = os.path.abspath(os.path.dirname(args.file))
+    input_file_dir = os.path.abspath(os.path.dirname(args.file))
     project_info = read_yaml_file(screening_input_file)
 
     # 1. Run job in parallel
     result = Parallel(n_jobs=-1)(delayed(get_ase_energy)(*data) for data in geom_and_calc_producer(project_info))
     # 2. Save results
+    crashing_conformer_hash_ids = list()
     for fingerprint, energy in result:
         project_info['conformers'][fingerprint]['is_crashing'] = np.isnan(energy)
+        if np.isnan(energy):
+            crashing_conformer_hash_ids.append(fingerprint)
         project_info['conformers'][fingerprint]['initial_screening_sp_energy'] = energy
-    outfile_path = infput_file_dir + '/initial_conf_screening_result.yml'
+    project_info['crashing_conformer_hash_ids'] = tuple(crashing_conformer_hash_ids)
+    outfile_path = os.path.join(input_file_dir, 'initial_conf_screening_result.yml')
     write_yaml_file(path=outfile_path, content=project_info)
 
 

@@ -1,5 +1,5 @@
 """
-This module generates TS conformers for initial sp screening.
+This module generates conformers for initial sp screening.
 """
 
 import argparse
@@ -13,7 +13,7 @@ import numpy as np
 from rdkit import Chem
 from copy import deepcopy
 
-from acs.backend.rdk import RDKitConf, RDKitTS
+from acs.backend.rdk import RDKitConf, RDKitTS, RDKitMol
 from acs.converter.geom import (xyz_str_to_xyz_dict,
                                 xyz_dict_to_xyz_str,
                                 xyz_dict_to_xyz_file)
@@ -165,7 +165,7 @@ def parse_command_line_arguments(command_line_args=None):
 
 def main():
     """
-    The gen_ts_conf executable function
+    The gen_conf executable function
     """
     # todo: write log
     # todo: exceptions
@@ -188,43 +188,55 @@ def main():
     project_info['species']['coord']['arc_xyz'] = xyz_dict
     xyz_file = f"{len(xyz_str.splitlines())}\n\n{xyz_str}"
 
-    # 1. Generate TS conformers
-    # 1.1 Perceive TS
-    # 1.1.1 Pybel (openbabel) is used to roughly perceive the molecular connectivity
+    # 1. Generate conformers
+    # 1.1 Pybel (openbabel) is used to roughly perceive the molecular connectivity
     pybel_mol = pybel.readstring('xyz', xyz_file)
-    rdkitts = RDKitTS.FromOBMol(pybel_mol.OBMol)
-    rdkitts.EmbedConformer()
-    conf = rdkitts.GetConformer()
-    conf.SetPositions(xyz_dict['coords'])
 
-    # 1.1.2 Set the missing bonds existing in the TS
-    bonds = list()
-    threshold = 1.6
+    # 1.1.a Process TS conformer
+    if project_info['species']['is_ts']:
+        # 1.1.a.1  Perceive TS
+        rdkitts = RDKitTS.FromOBMol(pybel_mol.OBMol)
+        rdkitts.EmbedConformer()
+        conf = rdkitts.GetConformer()
+        conf.SetPositions(xyz_dict['coords'])
 
-    if not bonds:
-        dist_mat = np.triu(rdkitts.GetDistanceMatrix())
-        covl_mat = rdkitts.GetCovalentMatrix()
+        # 1.1.a.2 Set the missing bonds existing in the TS
+        bonds = list()
+        threshold = 1.6
 
-        for multiplier in np.arange(1.1, threshold, 0.1):
-            atom1s, atom2s = np.where((dist_mat - multiplier * covl_mat) < 0)
-            bonds = [(int(atom1s[i]), int(atom2s[i])) for i in range(len(atom1s))]
         if not bonds:
-            raise ValueError('Cannot id TS bond!')
+            dist_mat = np.triu(rdkitts.GetDistanceMatrix())
+            covl_mat = rdkitts.GetCovalentMatrix()
 
-    # 1.1.3 Overwrite the RDKitTS with new bonding info
-    rw_mol = rdkitts.ToRDMol()
+            for multiplier in np.arange(1.1, threshold, 0.1):
+                atom1s, atom2s = np.where((dist_mat - multiplier * covl_mat) < 0)
+                bonds = [(int(atom1s[i]), int(atom2s[i])) for i in range(len(atom1s))]
+            if not bonds:
+                raise ValueError('Cannot id TS bond!')
 
-    for bond in bonds:
-        # Use BondType.OTHER if you want to avoid to be counted as a torsional mode
-        # If you want to include it, please use BondType.SINGLE
-        rw_mol.AddBond(*bond, Chem.BondType.OTHER)
+        # 1.1.a.3 Overwrite the RDKitTS with new bonding info
+        rw_mol = rdkitts.ToRDMol()
 
-    rdkitts = rdkitts.FromRDMol(rw_mol)
+        for bond in bonds:
+            # Use BondType.OTHER if you want to avoid to be counted as a torsional mode
+            # If you want to include it, please use BondType.SINGLE
+            rw_mol.AddBond(*bond, Chem.BondType.OTHER)
+
+        rdkitts = rdkitts.FromRDMol(rw_mol)
+    # 1.1.b Process non-TS conformer
+    else:
+        rdkitmol = RDKitMol.FromOBMol(pybel_mol.OBMol)
 
     # 1.2 Use RDKit to generate conformers
-    # 1.2.1 Initialize a conformer instance
-    rdkitts.EmbedConformer()
-    conf = rdkitts.GetConformer()
+    # 1.2.1.a Initialize a TS conformer instance
+    if project_info['species']['is_ts']:
+        rdkitts.EmbedConformer()
+        conf = rdkitts.GetConformer()
+    # 1.2.1.b Initialize a non-TS conformer instance
+    else:
+        rdkitmol.EmbedConformer()
+        conf = rdkitmol.GetConformer()
+
     conf.SetPositions(xyz_dict['coords'])
 
     # 1.2.2 Get the torsional mode and the original angles
@@ -291,16 +303,14 @@ def main():
             else:
                 colliding_conformer_hash_ids.append(k)
 
-        conformer_to_screen_hash_ids = tuple(conformer_to_screen_hash_ids)
-        colliding_conformer_hash_ids = tuple(colliding_conformer_hash_ids)
-        bookkeep['conformer_to_screen_hash_ids'] = conformer_to_screen_hash_ids
-        bookkeep['colliding_conformer_hash_ids'] = colliding_conformer_hash_ids
+        bookkeep['conformer_to_screen_hash_ids'] = tuple(conformer_to_screen_hash_ids)
+        bookkeep['colliding_conformer_hash_ids'] = tuple(colliding_conformer_hash_ids)
 
         sub_dir_path = os.path.join(project_directory, 'initial_sp_screening', str(i))
         os.mkdir(sub_dir_path)
-        outfile_path = sub_dir_path + '/initial_conf_coords.yml'
+        outfile_path = os.path.join(sub_dir_path, 'initial_conf_coords.yml')
         write_yaml_file(path=outfile_path, content=bookkeep)
-    sub_folder_info_path = os.path.join(project_directory, 'initial_sp_screening') + 'sub_folder_info.yml'
+    sub_folder_info_path = os.path.join(project_directory, 'initial_sp_screening', 'sub_folder_info.yml')
     write_yaml_file(path=sub_folder_info_path, content=sub_folder_info)
 
 
