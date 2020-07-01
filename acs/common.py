@@ -7,7 +7,9 @@ import os
 
 import yaml
 from typing import Any, List, Optional, Tuple, Union, Dict
+import shutil
 
+from copy import deepcopy
 import numpy as np
 import pandas as pd
 
@@ -33,7 +35,7 @@ def read_yaml_file(path: str,
         dict or list: The content read from the file.
     """
     with open(path, 'r') as f:
-        content = yaml.load(stream=f, Loader=yaml.FullLoader)
+        content = yaml.load(stream=f, Loader=yaml.Loader)
     return content
 
 
@@ -54,6 +56,62 @@ def write_yaml_file(path: str,
     with open(path, 'w') as f:
         yaml.dump(content, f, default_flow_style=False)
 
+def mkdir(path: str,
+          force: bool = True,
+          ) -> None:
+    if force and os.path.exists(path):
+        shutil.rmtree(path)
+
+    os.mkdir(path)
+
+def update_selected_keys(dict1: dict,
+                         dict2: dict,
+                         keys_to_ignore: tuple = tuple(),
+                         keys_to_update: tuple = tuple(),
+                         ) -> dict:
+
+    dict1_cp = deepcopy(dict1)
+    s = set(dict2.keys())
+    t1 = set(keys_to_ignore)
+    t2 = set(keys_to_update)
+    s.difference_update(t1)
+    s.intersection_update(t2)
+
+    for k in s:
+        if k in dict1_cp:
+            dict1_cp[k] = dict2[k]
+    return dict1_cp
+
+def gen_gaussian_input_file(name: str,
+                            xyz_str: str,
+                            charge: int,
+                            multiplicity: int,
+                            memory_mb: int,
+                            cpu_threads: int,
+                            is_ts: bool,
+                            level_of_theory: str,
+                            comment: str = '',
+                            ) -> str:
+    if is_ts:
+        title_card = "#p opt=(calcfc,noeigentest,maxcycles=120) freq guess=mix scf=xqc iop(2/9=2000)"
+    else:
+        title_card = "#p opt=(calcfc,ts,noeigentest,maxcycles=120) freq guess=mix scf=xqc iop(2/9=2000)"
+
+    script = f"""%chk={name}.chk
+%mem={memory_mb}mb
+%NProcShared={cpu_threads}
+
+{title_card} {level_of_theory}
+
+{comment}
+
+{charge} {multiplicity}
+{xyz_str}
+
+
+
+"""
+    return script
 
 # def convert_gaussian_zmat_to_arc_zmat(zmat_file_path: str,
 #                                       ) -> Dict:
