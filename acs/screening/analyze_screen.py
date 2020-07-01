@@ -133,6 +133,7 @@ def main():
                                             keys_to_update=('project',
                                                             'project_folder_path',
                                                             'species',
+                                                            'level_of_theory',
                                                             ))
 
     # 1. Analyze screening result
@@ -228,16 +229,18 @@ def main():
     charge = opt_project_info['species']['charge']
     multiplicity = opt_project_info['species']['multiplicity']
     is_ts = opt_project_info['species']['is_ts']
+    # todo: deal with other levels and multiplicity = 3
+    # assume multiplicity = 1 or 2 here
+    level_of_theory = opt_project_info['level_of_theory']['opt']
+    if level_of_theory not in ['cbs-qb3']:
+        if multiplicity == 2:
+            level_of_theory = 'u' + level_of_theory
 
     for i, fingerprint in enumerate(opt_project_info['conformer_to_opt_hash_ids']):
         opt_input_file_name = str(i) + '_' + str(fingerprint) + '_geom_opt_freq.gjf'
         opt_input_file_path = os.path.join(opt_dir, opt_input_file_name)
 
         xyz_str = opt_project_info['conformers'][fingerprint]['xyz_str_before_opt']
-
-        # todo: deal with other levels and multiplicity = 3
-        # assume multiplicity = 1 or 2 here
-        level_of_theory = 'uwb97xd def2svp' if multiplicity == 2 else 'wb97xd def2svp'
 
         opt_input_file = gen_gaussian_input_file(name=opt_input_file_name ,
                                                     xyz_str=xyz_str,
@@ -250,7 +253,7 @@ def main():
                                                     comment=str(fingerprint),
                                                     )
 
-        opt_project_info['conformers'][fingerprint]['file_path']['input']['end_of_opt'] = opt_input_file_path
+        opt_project_info['conformers'][fingerprint]['file_path']['input']['opt'] = opt_input_file_path
 
         with open(opt_input_file_path, 'w') as f:
             f.write(opt_input_file)
