@@ -176,7 +176,7 @@ def main():
     project_directory = os.path.abspath(os.path.dirname(args.file))
     input_dict = read_yaml_file(path=input_file)
 
-    project_info = default_job_info_dict_for_initial_sp_screening
+    project_info = deepcopy(default_job_info_dict_for_initial_sp_screening)
     project_info.update(input_dict)
     project_info['project_folder_path'] = project_directory
 

@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 from matplotlib.patches import Rectangle
+from copy import deepcopy
 
 from acs.common import read_yaml_file, write_yaml_file, mkdir, update_selected_keys, gen_gaussian_input_file
 from acs.script import default_job_info_dict_after_initial_sp_screening, g16_slurm_array_script, \
@@ -126,7 +127,7 @@ def main():
     # 0.2 Initialize optimization project info
     opt_dir = os.path.join(project_dir, 'opt')
     mkdir(opt_dir)
-    opt_project_info = default_job_info_dict_after_initial_sp_screening
+    opt_project_info = deepcopy(default_job_info_dict_after_initial_sp_screening)
     opt_project_info = update_selected_keys(opt_project_info,
                                             screen_project_info,
                                             keys_to_update=('project',
@@ -207,7 +208,7 @@ def main():
             conformer_to_opt_hash_ids.append(fingerprint)
 
             conformer_from_screen = screen_result['conformers'][fingerprint]
-            conformer_to_opt = default_conformer_info_dict_after_initial_sp_screening
+            conformer_to_opt = deepcopy(default_conformer_info_dict_after_initial_sp_screening)
 
             conformer_to_opt['rotor_dimension'] = conformer_from_screen['rotor_dimension']
             conformer_to_opt['dihedral_before_opt'] = conformer_from_screen['dihedral']
@@ -258,7 +259,8 @@ def main():
     # todo: make submission script more general
     name = opt_project_info['species']['name']
     last_job_num = len(opt_project_info['conformer_to_opt_hash_ids']) - 1
-    sub_script = g16_slurm_array_script.format(last_job_num=str(last_job_num), name=name)
+    sub_script = deepcopy(g16_slurm_array_script)
+    sub_script = sub_script.format(last_job_num=str(last_job_num), name=name)
     sub_script_file_path = os.path.join(opt_dir, 'submit_g16_array.sh')
     with open(sub_script_file_path, 'w') as f:
         f.write(sub_script)
