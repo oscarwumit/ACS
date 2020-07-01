@@ -6,8 +6,12 @@ default_job_info_dict_after_initial_sp_screening = \
 {
 'project': None,  # project name, str
 'is_initial_sp_screening': False,  # used to identify type of info file when read from disk
-'valid_conformer_num_ids': None,  # tuples of conformer (identified by its number in the conformers dictionary) that are considered valid
-'valid_conformer_hash_ids': None,  # tuples of conformer (identified by its hash id) that are considered valid, used to select from all conformers
+'conformer_to_opt_hash_ids': None,  # tuples of conformer (identified by its hash id) that will be screened via sp energy
+'colliding_conformer_after_opt_hash_ids': None,
+'crashing_conformer_in_opt_hash_ids': None,
+'conformer_to_calc_sp_after_opt_hash_ids': None,
+'conformer_to_calc_solv_hash_ids': None,
+'valid_conformer_hash_ids': None,  # for non-TS this means it's isomorphic to the given smile and is a well, for TS this means it's a first order saddle point for the reaction of interest
 'project_folder_path': None,  # absolute path where the project info is saved, str
 'calc_solvation_sp_correction': None,  # bool
 'comment': None,  # reserved for additional info
@@ -47,16 +51,19 @@ default_job_info_dict_after_initial_sp_screening = \
 
 default_conformer_info_dict_after_initial_sp_screening = \
 {
-'rotor_dimension': None,  #  number of dihedrals modified
-'dihedral': None,  #  ((atom indices for dihedral X), float of dihedral angle X)
+'rotor_dimension': None,  #  number of dihedrals originally modified
+'dihedral_before_opt': None,  #  ((atom indices for dihedral X), float of dihedral angle X)
                    #  ( ((1, 2, 3, 4), 45.0), ((7, 8, 9, 10), 120.0) ) for 2d dihedral changes
-'hash_id': None,  # globally unique 128-bit id
 'is_colliding': None, # bool
 'is_crashing': None, # bool
 'is_isomorphic': None, # bool
 'is_valid_ts': None,  # bool
 'frequencies': None,  # tuple
 'negative_frequencies': None,  # tuple
+'xyz_str_before_opt': None,  # xyz format with atom symbol and coords only (no charge/multiplicity/atom count)
+'arc_xyz_before_opt': None,  # arc_xyz format
+'xyz_str_after_opt': None,  # xyz format with atom symbol and coords only (no charge/multiplicity/atom count)
+'arc_xyz_after_opt': None,  # arc_xyz format
 
 
 'energy':   {
