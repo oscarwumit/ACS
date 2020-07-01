@@ -223,14 +223,15 @@ def main():
     opt_project_info['conformer_to_opt_hash_ids'] = tuple(conformer_to_opt_hash_ids)
 
     # 4. Generate opt input file
+    charge = opt_project_info['species']['charge']
+    multiplicity = opt_project_info['species']['multiplicity']
+    is_ts = opt_project_info['species']['is_ts']
+
     for i, fingerprint in enumerate(opt_project_info['conformer_to_opt_hash_ids']):
         opt_input_file_name = str(i) + '_' + str(fingerprint) + '_geom_opt_freq.gjf'
         opt_input_file_path = os.path.join(opt_dir, opt_input_file_name)
 
         xyz_str = opt_project_info['conformers'][fingerprint]['xyz_str_before_opt']
-        charge = opt_project_info['species']['charge']
-        multiplicity = opt_project_info['species']['multiplicity']
-        is_ts = opt_project_info['species']['is_ts']
 
         # todo: deal with other levels and multiplicity = 3
         # assume multiplicity = 1 or 2 here

@@ -93,9 +93,9 @@ def gen_gaussian_input_file(name: str,
                             comment: str = '',
                             ) -> str:
     if is_ts:
-        title_card = "#p opt=(calcfc,noeigentest,maxcycles=120) freq guess=mix scf=xqc iop(2/9=2000)"
-    else:
         title_card = "#p opt=(calcfc,ts,noeigentest,maxcycles=120) freq guess=mix scf=xqc iop(2/9=2000)"
+    else:
+        title_card = "#p opt=(calcfc,noeigentest,maxcycles=120) freq guess=mix scf=xqc iop(2/9=2000)"
 
     script = f"""%chk={name}.chk
 %mem={memory_mb}mb
