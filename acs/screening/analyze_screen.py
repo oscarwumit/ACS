@@ -139,7 +139,9 @@ def main():
     conformer_to_opt_hash_ids = list()
 
     # Process results one by one
-    for subfolder in os.listdir(screen_dir):
+    sub_folder_info = read_yaml_file(os.path.join(screen_dir, 'sub_folder_info.yml'))
+    for sub in sub_folder_info.keys():
+        subfolder = str(sub)
         screen_result_file_path = os.path.join(screen_dir, subfolder, 'initial_conf_screening_result.yml')
         screen_result = read_yaml_file(screen_result_file_path)
 
