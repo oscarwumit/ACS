@@ -169,8 +169,8 @@ echo "Gaussian PATH"
 which g16
 
 jnum=$SLURM_ARRAY_TASK_ID
-fin=$(echo ${jnum}_*.gjf)
-#fout="${fin%.*}".out
+fin=$(echo ${{jnum}}_*.gjf)
+#fout="${{fin%.*}}".out
 
 input=`basename $fin .gjf`
 echo "============================================================"
