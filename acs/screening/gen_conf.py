@@ -263,8 +263,9 @@ def main():
 
     # 1.2.3 Generate conformers according to the mangle mesh
     # todo: make this a function
-    n_point_each_torsion = 20
+    n_point_each_torsion = project_info.get('n_point_each_torsion', 20)
     project_info['n_point_each_torsion'] = n_point_each_torsion
+    # todo: enable higher dimensions
     n_dimension = 2
 
     bookkeeps = []

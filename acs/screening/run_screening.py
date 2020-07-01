@@ -16,11 +16,11 @@ from acs.common import read_yaml_file, write_yaml_file
 
 def geom_and_calc_producer(bookkeep):
     # todo: different default values based on ts or non-ts
-    # todo: deal with other multiplicity
     charge = bookkeep['species'].get('charge', 0)
     multiplicity = bookkeep['species'].get('multiplicity', 2)
+    # todo: deal with other multiplicity
     reference = 'uhf' if multiplicity == 2 else 'rhf'  # assume only 1 or 2 here, need consider other cases
-    initial_screening_sp_level_of_theory = bookkeep.get('initial_screening_sp_level_of_theory', 'wb97x-d/def2-svp')
+    initial_screening_sp_level_of_theory = bookkeep['level_of_theory'].get('initial_screening_sp', 'wb97x-d/def2-svp')
     method, basis = initial_screening_sp_level_of_theory.split('/')
     memory = bookkeep['species'].get('memory', '8000MB')
     num_thread = 1

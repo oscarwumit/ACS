@@ -6,7 +6,7 @@ default_job_info_dict_after_initial_sp_screening = \
 {
 'project': None,  # project name, str
 'is_initial_sp_screening': False,  # used to identify type of info file when read from disk
-'conformer_to_opt_hash_ids': None,  # tuples of conformer (identified by its hash id) that will be screened via sp energy
+'conformer_to_opt_hash_ids': None,  # tuples of conformer (identified by its hash id) that will be opted
 'colliding_conformer_after_opt_hash_ids': None,
 'crashing_conformer_in_opt_hash_ids': None,
 'conformer_to_calc_sp_after_opt_hash_ids': None,
@@ -18,7 +18,8 @@ default_job_info_dict_after_initial_sp_screening = \
 
 'level_of_theory': {
                     'initial_screening_sp': None,  # initial sp energy used to screen conformers, hartree, float
-                    'end_of_opt': None,  # energy after geometry optimization, hatree, float
+                    'opt': None,  # optimization after conformer screening
+                    'fine_opt': None,  # optional fine optimization
                     'sp_after_opt': None,  # high level gas phase sp energy computed using optimized geometry, hatree, float
                     'solv_sp_gas': None,  # gas phase sp energy computed using optimized geometry for solvation correction, hatree, float
                     'solv_sp_liq': None,  # liquid phase sp energy (e.g., SMD, PCM) computed using optimized geometry for solvation correction, hatree, float
@@ -69,6 +70,7 @@ default_conformer_info_dict_after_initial_sp_screening = \
 'energy':   {
             'initial_screening_sp': None,
             'end_of_opt': None,
+            'end_of_fine_opt': None,
             'sp_after_opt': None,
             'solv_sp_gas': None,
             'solv_sp_liq': None,
@@ -79,7 +81,8 @@ default_conformer_info_dict_after_initial_sp_screening = \
 'file_path': {
                 'input': {
                             'initial_screening_sp': None,
-                            'end_of_opt': None,
+                            'opt': None,
+                            'fine_opt': None,
                             'sp_after_opt': None,
                             'solv_sp_gas': None,
                             'solv_sp_liq': None,
@@ -89,7 +92,8 @@ default_conformer_info_dict_after_initial_sp_screening = \
 
                 'output':   {
                             'initial_screening_sp': None,
-                            'end_of_opt': None,
+                            'opt': None,
+                            'fine_opt': None,
                             'sp_after_opt': None,
                             'solv_sp_gas': None,
                             'solv_sp_liq': None,
@@ -110,11 +114,20 @@ default_job_info_dict_for_initial_sp_screening = \
 'crashing_conformer_hash_ids': None,
 'project_folder_path': None,  # absolute path where the project info is saved, str
 'calc_solvation_sp_correction': None,  # bool
-'initial_screening_sp_level_of_theory': None,
 'dihedrals_considered_in_this_file': None,  # tuple of dihedrals considered in this file, useful for splitting files for parallelization
 'n_point_each_torsion': None,
 'comment': None,  # reserved for additional info
 'memory': None,  # job memory
+
+'level_of_theory': {
+                    'initial_screening_sp': None,  # initial sp energy used to screen conformers, hartree, float
+                    'opt': None,  # optimization after conformer screening
+                    'fine_opt': None,  # optional fine optimization
+                    'sp_after_opt': None,  # high level gas phase sp energy computed using optimized geometry, hatree, float
+                    'solv_sp_gas': None,  # gas phase sp energy computed using optimized geometry for solvation correction, hatree, float
+                    'solv_sp_liq': None,  # liquid phase sp energy (e.g., SMD, PCM) computed using optimized geometry for solvation correction, hatree, float
+                    'solv_correction': None,  # either (1) solv_sp_liq - solv_sp_gas for PCM, SMD corrections or (2) direct delta G solv correction such as COSMO-RS, hatree, float
+                    },
 
 'species': {
             'name': None,  # species name, str
