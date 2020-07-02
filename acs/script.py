@@ -7,8 +7,11 @@ default_job_info_dict_after_initial_sp_screening = \
 'project': None,  # project name, str
 'is_initial_sp_screening': False,  # used to identify type of info file when read from disk
 'conformer_to_opt_hash_ids': None,  # tuples of conformer (identified by its hash id) that will be opted
+'conformer_to_fine_opt_hash_ids': None,
 'colliding_conformer_after_opt_hash_ids': None,
 'crashing_conformer_in_opt_hash_ids': None,
+'colliding_conformer_after_fine_opt_hash_ids': None,
+'crashing_conformer_in_fine_opt_hash_ids': None,
 'conformer_to_calc_sp_after_opt_hash_ids': None,
 'conformer_to_calc_solv_hash_ids': None,
 'valid_conformer_hash_ids': None,  # for non-TS this means it's isomorphic to the given smile and is a well, for TS this means it's a first order saddle point for the reaction of interest
@@ -18,8 +21,8 @@ default_job_info_dict_after_initial_sp_screening = \
 
 'level_of_theory': {
                     'initial_screening_sp': None,  # initial sp energy used to screen conformers, hartree, float
-                    'opt': None,  # optimization after conformer screening
-                    'fine_opt': None,  # optional fine optimization
+                    'opt_freq': None,  # optimization after conformer screening
+                    'fine_opt_freq': None,  # optional fine optimization
                     'sp_after_opt': None,  # high level gas phase sp energy computed using optimized geometry, hatree, float
                     'solv_sp_gas': None,  # gas phase sp energy computed using optimized geometry for solvation correction, hatree, float
                     'solv_sp_liq': None,  # liquid phase sp energy (e.g., SMD, PCM) computed using optimized geometry for solvation correction, hatree, float
@@ -59,18 +62,26 @@ default_conformer_info_dict_after_initial_sp_screening = \
 'is_crashing': None, # bool
 'is_isomorphic': None, # bool
 'is_valid_ts': None,  # bool
+'is_distinct': None, # bool
 'frequencies': None,  # tuple
 'negative_frequencies': None,  # tuple
+'zpe_scale_factor': None, # float
+'zpe_scale_factor_fine': None, # float
 'xyz_str_before_opt': None,  # xyz format with atom symbol and coords only (no charge/multiplicity/atom count)
 'arc_xyz_before_opt': None,  # arc_xyz format
 'xyz_str_after_opt': None,  # xyz format with atom symbol and coords only (no charge/multiplicity/atom count)
 'arc_xyz_after_opt': None,  # arc_xyz format
-
+'xyz_str_after_fine_opt': None,  # xyz format with atom symbol and coords only (no charge/multiplicity/atom count)
+'arc_xyz_after_fine_opt': None,  # arc_xyz format
 
 'energy':   {
             'initial_screening_sp': None,
             'end_of_opt': None,
             'end_of_fine_opt': None,
+            'unscaled_zpe': None,
+            'scaled_zpe': None,
+            'unscaled_zpe_fine': None,
+            'scaled_zpe_fine': None,
             'sp_after_opt': None,
             'solv_sp_gas': None,
             'solv_sp_liq': None,
@@ -81,8 +92,8 @@ default_conformer_info_dict_after_initial_sp_screening = \
 'file_path': {
                 'input': {
                             'initial_screening_sp': None,
-                            'opt': None,
-                            'fine_opt': None,
+                            'opt_freq': None,
+                            'fine_opt_freq': None,
                             'sp_after_opt': None,
                             'solv_sp_gas': None,
                             'solv_sp_liq': None,
@@ -92,8 +103,8 @@ default_conformer_info_dict_after_initial_sp_screening = \
 
                 'output':   {
                             'initial_screening_sp': None,
-                            'opt': None,
-                            'fine_opt': None,
+                            'opt_freq': None,
+                            'fine_opt_freq': None,
                             'sp_after_opt': None,
                             'solv_sp_gas': None,
                             'solv_sp_liq': None,
@@ -121,8 +132,8 @@ default_job_info_dict_for_initial_sp_screening = \
 
 'level_of_theory': {
                     'initial_screening_sp': None,  # initial sp energy used to screen conformers, hartree, float
-                    'opt': None,  # optimization after conformer screening
-                    'fine_opt': None,  # optional fine optimization
+                    'opt_freq': None,  # optimization after conformer screening
+                    'fine_opt_freq': None,  # optional fine optimization
                     'sp_after_opt': None,  # high level gas phase sp energy computed using optimized geometry, hatree, float
                     'solv_sp_gas': None,  # gas phase sp energy computed using optimized geometry for solvation correction, hatree, float
                     'solv_sp_liq': None,  # liquid phase sp energy (e.g., SMD, PCM) computed using optimized geometry for solvation correction, hatree, float
