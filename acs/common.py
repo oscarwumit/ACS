@@ -6,7 +6,7 @@ This module contains functions which are shared across multiple ACS modules.
 import os
 
 import yaml
-from typing import Any, List, Optional, Tuple, Union, Dict
+from typing import Any, List, Optional, Tuple, Union, Dict, Iterable
 import shutil
 
 from copy import deepcopy
@@ -20,6 +20,12 @@ from scipy.optimize import minimize
 
 # from arc.species.species import ARCSpecies
 # from arc.species.converter import xyz_to_xyz_file_format, str_to_zmat, zmat_to_xyz, modify_coords
+from arkane.ess import ess_factory, GaussianLog, MolproLog, OrcaLog, QChemLog, TeraChemLog
+from acs.exceptions import ParserError, InputError, ConverterError
+from arkane.exceptions import LogError
+import rmgpy.constants as constants
+from arkane.common import get_element_mass, mass_by_symbol, symbol_by_number
+import qcelemental as qcel
 
 
 def read_yaml_file(path: str,
@@ -107,6 +113,35 @@ def gen_gaussian_input_file(name: str,
 
 {charge} {multiplicity}
 {xyz_str}
+
+
+
+"""
+    return script
+
+def gen_gaussian_cosmo_sp_input_file(name: str,
+                                    xyz_str: str,
+                                    charge: int,
+                                    multiplicity: int,
+                                    memory_mb: int,
+                                    cpu_threads: int,
+                                    comment: str = '',
+                                    ) -> str:
+
+    title_card = "#P BVP86/TZVP/DGA1 scf=(tight,novaracc) SCRF=COSMORS NoSymm"
+
+    script = f"""%chk={name}.chk
+%mem={memory_mb}mb
+%NProcShared={cpu_threads}
+
+{title_card}
+
+{comment}
+
+{charge} {multiplicity}
+{xyz_str}
+
+{name}.cosmo
 
 
 
