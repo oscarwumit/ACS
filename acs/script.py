@@ -222,3 +222,32 @@ rm -rf $GAUSS_SCRDIR
 
 
 """
+
+
+cosmo_slurm_array_script = """#!/bin/bash -l
+#SBATCH -p normal
+#SBATCH -J cosmo
+#SBATCH -n 1
+#SBATCH --mem-per-cpu=2000
+#SBATCH --array=0-{last_job_num}
+
+export cosmotherm=/home/gridsan/groups/RMG/Software/COSMOtherm2020/COSMOtherm/BIN-LINUX/cosmotherm
+
+jnum=$SLURM_ARRAY_TASK_ID
+fin=$(echo ${{jnum}}_*.inp)
+#fout="${{fin%.*}}".out
+
+input=`basename $fin .inp`
+echo "============================================================"
+echo "Job ID : $SLURM_JOB_ID"
+echo "Job Name : $SLURM_JOB_NAME"
+echo "task ID: $SLURM_ARRAY_TASK_ID"
+echo "Starting on : $(date)"
+echo "Running on node : $SLURMD_NODENAME"
+echo "Current directory : $(pwd)"
+echo "============================================================"
+
+$cosmotherm $input.inp
+
+
+"""
