@@ -444,6 +444,194 @@ def _get_lines_from_file(path: str) -> List[str]:
     else:
         raise InputError(f'Could not find file {path}')
     return lines
+
+
+def cluster_confs_by_rmsd_with_id(labeled_xyzs: Iterable[Tuple[str, Dict[str, tuple]]],
+                                  rmsd_threshold: float = 1e-2,
+                                  ) -> Tuple[Tuple[str, Dict[str, tuple]]]:
+    """
+    Cluster conformers with the same atom orders using RMSD of distance matrices. Work for both TS and non-TS conformers.
+
+    Intended for finding structurally distinct conformers from a pool of conformers.
+    Suitable scenarios:
+        1. filter a pool of conformers with their geometry optimized at some level.
+    Not suitable for:
+        1. cluster conformers (not optimized) that are sampling of a well or a saddle point (these conformers may have
+           large difference in RMSE, but they really should be representing the same well or saddle point).
+
+    Args:
+        labeled_xyzs (Iterable): Conformers with the same atom orders with ids.
+        rmsd_threshold (float): The minimum RMSD to consider two conformers as distinct
+                                (i.e., if rmsd > rmsd_threshold, then two conformers are considered distinctive).
+
+    Returns:
+        Tuple[Dict[str, tuple]]: Conformers with distinctive geometries.
+    """
+    labeled_xyzs = tuple(labeled_xyzs)
+    fingerprint = labeled_xyzs[0][0]
+    xyz = labeled_xyzs[0][1]
+    distinct_id_xyz_pair = [(fingerprint, xyz)]
+    distinct_xyzs = [xyz]
+
+    for id_xyz_pair in labeled_xyzs:
+        fingerprint = id_xyz_pair[0]
+        xyz = id_xyz_pair[1]
+        rmsd_list = [compare_confs(xyz, distinct_xyz, rmsd_score=True) for distinct_xyz in tuple(distinct_xyzs)]
+        if all([rmsd > rmsd_threshold for rmsd in tuple(rmsd_list)]):
+            distinct_xyzs.append(xyz)
+            distinct_id_xyz_pair.append((fingerprint, xyz))
+    return tuple(distinct_id_xyz_pair)
+
+def compare_confs(xyz1: dict,
+                  xyz2: dict,
+                  rtol: float = 1e-5,
+                  atol: float = 1e-5,
+                  rmsd_score: bool = False,
+                  ) -> Union[float, bool]:
+    """
+    Compare two Cartesian coordinates representing conformers using distance matrices.
+
+    The relative difference (``rtol`` * abs(value in xyz2)) and the absolute difference ``atol``
+    are added together to compare against the absolute difference between (value in xyz1) and (value in xyz2).
+
+    Args:
+        xyz1 (dict): Conformer 1.
+        xyz2 (dict): Conformer 2.
+        rtol (float): The relative tolerance parameter (see Notes).
+        atol (float): The absolute tolerance parameter (see Notes).
+        rmsd_score (bool): Whether to output a root-mean-square deviation score of the two distance matrices.
+
+    Returns:
+        Union[float, bool]:
+            - If ``rmsd_score`` is ``False`` (default): Whether the two conformers have almost equal atom distances.
+              ``True`` if they do.
+            - If ``rmsd_score`` is ``True``: The RMSD score of two distance matrices.
+    """
+    xyz1, xyz2 = check_xyz_dict(xyz1), check_xyz_dict(xyz2)
+    dmat1, dmat2 = xyz_to_dmat(xyz1), xyz_to_dmat(xyz2)
+    if rmsd_score:
+        # distance matrix is symmetric, only need the upper triangular part to compute rmsd
+        rmsd = calc_rmsd(np.triu(dmat1), np.triu(dmat2))
+        return rmsd
+    else:
+        return almost_equal_lists(dmat1, dmat2, rtol=rtol, atol=atol)
+
+def almost_equal_lists(iter1: list or tuple or np.ndarray,
+                       iter2: list or tuple or np.ndarray,
+                       rtol: float = 1e-05,
+                       atol: float = 1e-08,
+                       ) -> bool:
+    """
+    A helper function for checking whether two iterables are almost equal.
+
+    Args:
+        iter1 (list, tuple, np.array): An iterable.
+        iter2 (list, tuple, np.array): An iterable.
+        rtol (float, optional): The relative tolerance parameter.
+        atol (float, optional): The absolute tolerance parameter.
+
+    Returns:
+        bool: ``True`` if they are almost equal, ``False`` otherwise.
+    """
+    if len(iter1) != len(iter2):
+        return False
+    for entry1, entry2 in zip(iter1, iter2):
+        if isinstance(entry1, (list, tuple, np.ndarray)) and isinstance(entry2, (list, tuple, np.ndarray)):
+            return almost_equal_lists(iter1=entry1, iter2=entry2, rtol=rtol, atol=atol)
+        else:
+            if isinstance(entry1, (int, float)) and isinstance(entry2, (int, float)):
+                if not np.isclose([entry1], [entry2], rtol=rtol, atol=atol):
+                    return False
+            else:
+                if entry1 != entry2:
+                    return False
+    return True
+
+def calc_rmsd(x: np.array,
+              y: np.array,
+              ) -> float:
+    """
+    Compute the root-mean-square deviation between two matrices.
+
+    Args:
+        x (np.array): Matrix 1.
+        y (np.array): Matrix 2.
+
+    Returns:
+        float: The RMSD score of two matrices.
+    """
+    d = x - y
+    n = x.shape[0]
+    sqr_sum = (d**2).sum()
+    rmsd = np.sqrt(sqr_sum/n)
+    return float(rmsd)
+
+def check_xyz_dict(xyz):
+    """
+    Check that the xyz dictionary entered is valid.
+    If it is a string, convert it.
+    If it is a Z matrix, convert it to cartesian coordinates,
+    If isotopes are not in xyz_dict, common values will be added.
+
+    Args:
+        xyz (dict, str): The xyz dictionary.
+
+    Raises:
+        ConverterError: If ``xyz`` is of wrong type or is missing symbols or coords.
+    """
+    xyz_dict = xyz
+    if not isinstance(xyz_dict, dict):
+        raise ConverterError(f'Expected a dictionary, got {type(xyz_dict)}')
+    if 'vars' in list(xyz_dict.keys()):
+        raise ConverterError('Expected xyz got zmat')
+    if 'symbols' not in list(xyz_dict.keys()):
+        raise ConverterError(f'XYZ dictionary is missing symbols. Got:\n{xyz_dict}')
+    if 'coords' not in list(xyz_dict.keys()):
+        raise ConverterError(f'XYZ dictionary is missing coords. Got:\n{xyz_dict}')
+    if len(xyz_dict['symbols']) != len(xyz_dict['coords']):
+        raise ConverterError(f'Got {len(xyz_dict["symbols"])} symbols and {len(xyz_dict["coords"])} '
+                             f'coordinates:\n{xyz_dict}')
+    if 'isotopes' not in list(xyz_dict.keys()):
+        xyz_dict = xyz_from_data(coords=xyz_dict['coords'], symbols=xyz_dict['symbols'])
+    if len(xyz_dict['symbols']) != len(xyz_dict['isotopes']):
+        raise ConverterError(f'Got {len(xyz_dict["symbols"])} symbols and {len(xyz_dict["isotopes"])} '
+                             f'isotopes:\n{xyz_dict}')
+    return xyz_dict
+
+
+def xyz_to_dmat(xyz_dict: dict) -> np.array:
+    """
+    Convert Cartesian coordinates to a distance matrix.
+
+    Args:
+        xyz_dict (dict): The Cartesian coordinates,
+
+    Returns:
+        list: the distance matrix.
+    """
+    xyz_dict = check_xyz_dict(xyz_dict)
+    dmat = qcel.util.misc.distance_matrix(a=np.array(xyz_to_coords_list(xyz_dict)),
+                                          b=np.array(xyz_to_coords_list(xyz_dict)))
+    return dmat
+
+
+def xyz_to_coords_list(xyz_dict):
+    """
+    Get the coords part of an xyz dict as a (mutable) list of lists (rather than a tuple of tuples)
+
+    Args:
+        xyz_dict (dict): The ARC xyz format.
+
+    Returns:
+        list: The coordinates.
+    """
+    xyz_dict = check_xyz_dict(xyz_dict)
+    coords_tuple = xyz_dict['coords']
+    coords_list = list()
+    for coords_tup in coords_tuple:
+        coords_list.append([coords_tup[0], coords_tup[1], coords_tup[2]])
+    return coords_list
+
 # def convert_gaussian_zmat_to_arc_zmat(zmat_file_path: str,
 #                                       ) -> Dict:
 #     """
@@ -601,60 +789,6 @@ def _get_lines_from_file(path: str) -> List[str]:
 #     return xyz_new_dict
 #
 #
-# def process_gaussian_opt_freq_output(logfile):
-#     if not check_gaussian_normal_termination(logfile):
-#         raise ParserError('Gaussian error termination.')
-#     info = dict()
-#     info['freq'] = get_gaussian_freq(logfile, checkneg=True, ts=False)
-#     info['xyz'] = get_gaussian_geometry(logfile, plot=False)
-#     info['energy'] = get_gaussian_energy(logfile)
-#     return info
-#
-#
-# def get_gaussian_freq(logfile, checkneg=True, ts=True):
-#     freq = parse_frequencies(logfile, software='gaussian')
-#     neg_freq = tuple([float(x) for x in freq if x < 0])
-#     if checkneg:
-#         if ts:
-#             if len(neg_freq) == 0:
-#                 raise ParserError('Did not find any negative frequencies.')
-#             elif len(neg_freq) > 1:
-#                 raise ParserError(f'Find more than one negative frequencies: {neg_freq}')
-#         else:
-#             if len(neg_freq):
-#                 raise ParserError(f'Find negative frequencies for non-TS species: {neg_freq}')
-#     return (freq, neg_freq)
-#
-#
-# def check_gaussian_normal_termination(logfile):
-#     with open(logfile, 'r') as f:
-#         lines = f.readlines()
-#         forward_lines = tuple(lines)
-#     for line in forward_lines[-1:-20:-1]:
-#         if 'Normal termination' in line:
-#             return True
-#     else:
-#         return False
-#
-#
-# def get_gaussian_energy(logfile):
-#     energy_dict = dict()
-#     e_j_mol = parse_e_elect(logfile)
-#     energy_dict['J/mol'] = e_j_mol
-#     e_kj_mol = e_j_mol / 1000
-#     energy_dict['kJ/mol'] = e_kj_mol
-#     e_kcal_mol = e_j_mol / 4184
-#     energy_dict['kcal/mol'] = e_kcal_mol
-#     e_scf = round(e_j_mol/(constants.E_h * constants.Na / 1000), 9)
-#     energy_dict['scf'] = e_scf
-#     return energy_dict
-#
-#
-# def get_gaussian_geometry(logfile, plot=False):
-#     xyz = parse_geometry(logfile)
-#     if plot:
-#         show_sticks(xyz)
-#     return xyz
 #
 #
 # def write_gaussian_input_file():
