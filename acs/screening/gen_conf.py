@@ -169,6 +169,7 @@ def main():
     """
     # todo: write log
     # todo: exceptions
+    # todo: ts volume check
     # 0. Parse input
     # 0.1 Basic project info
     args = parse_command_line_arguments()
