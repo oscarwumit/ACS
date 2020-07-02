@@ -13,9 +13,10 @@ import seaborn as sns
 from matplotlib.patches import Rectangle
 
 from acs.common import read_yaml_file, write_yaml_file, mkdir, update_selected_keys, gen_gaussian_input_file, \
-    process_gaussian_opt_freq_output, cluster_confs_by_rmsd_with_id, gen_gaussian_cosmo_sp_input_file
+    process_gaussian_opt_freq_output, cluster_confs_by_rmsd_with_id, gen_gaussian_cosmo_sp_input_file, \
+    gen_cosmo_rs_input_file
 from acs.script import default_job_info_dict_after_initial_sp_screening, g16_slurm_array_script, \
-    default_conformer_info_dict_after_initial_sp_screening
+    default_conformer_info_dict_after_initial_sp_screening, cosmo_slurm_array_script
 from acs.exceptions import ParserError
 from acs.converter.geom import xyz_dict_to_xyz_str
 from copy import deepcopy
@@ -300,6 +301,7 @@ def main():
 
     # 2.c.2 generate solvation input file
     # implemented for cosmo only
+    # 2.c.2.1 Generate cosmo gaussian input file
         cosmo_dir = os.path.join(project_dir, 'cosmo')
         mkdir(cosmo_dir)
 
@@ -324,62 +326,40 @@ def main():
             with open(cosmo_input_file_path, 'w') as f:
                 f.write(cosmo_input_file)
 
+    # 2.c.2.2 Generate cosmo-rs input file
+            cosmo_rs_input_file_name = str(i) + '_' + str(fingerprint) + '_cosmo.inp'
+            cosmo_rs_input_file_path = os.path.join(cosmo_dir, cosmo_rs_input_file_name)
 
+            cosmo_rs_input_file_basename = cosmo_rs_input_file_name.split('.')[0]
+            cosmo_rs_input_file = gen_cosmo_rs_input_file(name=cosmo_rs_input_file_basename)
 
+            cosmo_rs_output_file_name = str(i) + '_' + str(fingerprint) + '_cosmo.tab'
+            cosmo_rs_output_file_path = os.path.join(cosmo_dir, cosmo_rs_output_file_name)
+            opt_project_info['conformers'][fingerprint]['file_path']['output']['solv_correction'] = cosmo_rs_output_file_path
 
+            with open(cosmo_rs_input_file_path, 'w') as f:
+                f.write(cosmo_rs_input_file)
 
+    # 2.c.2.3 Array job submission script
+    # 2.c.2.3.1 for Gaussian cosmo input files
+        name = opt_project_info['species']['name']
+        last_job_num = len(valid_conformer_hash_ids) - 1
+        sub_script = deepcopy(g16_slurm_array_script)
+        sub_script = sub_script.format(last_job_num=str(last_job_num), name=name)
+        sub_script_file_path = os.path.join(cosmo_dir, 'submit_g16_array.sh')
+        with open(sub_script_file_path, 'w') as f:
+            f.write(sub_script)
 
+    # 2.c.2.3.2 for cosmo-rs input files
+        cosmo_sub_script = deepcopy(cosmo_slurm_array_script)
+        cosmo_sub_script = cosmo_sub_script.format(last_job_num=str(last_job_num))
+        cosmo_sub_script_file_path = os.path.join(cosmo_dir, 'submit_cosmo_array.sh')
+        with open(cosmo_sub_script_file_path, 'w') as f:
+            f.write(cosmo_sub_script)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    # check if fine opt or not
-    # 1. Analyze optfreq result
-    # 1.1. check if collide, if crashing, if isomorphic, if vlaid_ts and if distinct
-    # 2. Generate input file
-    # if cbs-qb3 and no sp then no sp, just do cosmo
-    # if fine opt then opt again
-
-
-
+    # 2.c.2.4 save cosmo project info
+        cosmo_project_info_path = os.path.join(cosmo_dir, 'cosmo_project_info.yml')
+        write_yaml_file(path=cosmo_project_info_path, content=opt_project_info)
 
 if __name__ == '__main__':
     main()
