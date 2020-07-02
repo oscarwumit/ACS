@@ -120,7 +120,7 @@ def main():
     # 0.1 Parse screening project info
     args = parse_command_line_arguments()
     screening_input_file = args.file
-    # input_file_dir = os.path.abspath(os.path.dirname(args.file))
+    # input_file_dir = os.path.abspath(os.path.dirname(args.file)) # todo: use this to decude abs path if folder moved
     screen_project_info = read_yaml_file(screening_input_file)
     project_dir = screen_project_info['project_folder_path']
     screen_dir = os.path.join(project_dir, 'initial_sp_screening')
@@ -231,8 +231,8 @@ def main():
     is_ts = opt_project_info['species']['is_ts']
     # todo: deal with other levels and multiplicity = 3
     # assume multiplicity = 1 or 2 here
-    level_of_theory = opt_project_info['level_of_theory']['opt']
-    if level_of_theory not in ['cbs-qb3']:
+    level_of_theory = opt_project_info['level_of_theory']['opt_freq']
+    if level_of_theory.lower() not in ['cbs-qb3']:
         if multiplicity == 2:
             level_of_theory = 'u' + level_of_theory
 
@@ -242,7 +242,8 @@ def main():
 
         xyz_str = opt_project_info['conformers'][fingerprint]['xyz_str_before_opt']
 
-        opt_input_file = gen_gaussian_input_file(name=opt_input_file_name ,
+        opt_input_file_basename = opt_input_file_name.split('.')[0]
+        opt_input_file = gen_gaussian_input_file(name=opt_input_file_basename ,
                                                     xyz_str=xyz_str,
                                                     charge=charge,
                                                     multiplicity=multiplicity,
@@ -253,7 +254,7 @@ def main():
                                                     comment=str(fingerprint),
                                                     )
 
-        opt_project_info['conformers'][fingerprint]['file_path']['input']['opt'] = opt_input_file_path
+        opt_project_info['conformers'][fingerprint]['file_path']['input']['opt_freq'] = opt_input_file_path
 
         with open(opt_input_file_path, 'w') as f:
             f.write(opt_input_file)
