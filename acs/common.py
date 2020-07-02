@@ -113,6 +113,337 @@ def gen_gaussian_input_file(name: str,
 """
     return script
 
+def process_gaussian_opt_freq_output(logfile, is_ts=True, check_neg_freq=True):
+    if not check_gaussian_normal_termination(logfile):
+        raise ParserError('Gaussian error termination.')
+    info = dict()
+    info['freq'] = get_gaussian_freq(logfile, check_neg_freq=is_ts, ts=check_neg_freq)
+    info['xyz_dict'] = get_gaussian_geometry(logfile)
+    info['electronic_energy'] = get_gaussian_energy(logfile)
+    info['unscaled_zpe'] = get_gaussian_unscaled_zpe(logfile)
+
+    return info
+
+
+def get_gaussian_freq(logfile, check_neg_freq=True, min_neg_freq=-2400, max_neg_freq=-200, ts=True):
+    freq = parse_frequencies(logfile, software='gaussian')
+    neg_freq = tuple([float(x) for x in freq if x < 0])
+    if check_neg_freq:
+        if ts:
+            if len(neg_freq) == 0:
+                raise ParserError('Did not find any negative frequencies.')
+            elif len(neg_freq) > 1:
+                raise ParserError(f'Find more than one negative frequencies: {neg_freq}')
+            elif neg_freq[0] < min_neg_freq:
+                raise ParserError(f'Value of negative frequency {neg_freq} lower than minimum {min_neg_freq}')
+            elif neg_freq[0] > max_neg_freq:
+                raise ParserError(f'Value of negative frequency {neg_freq} higher than maximum {max_neg_freq}')
+        else:
+            if len(neg_freq):
+                raise ParserError(f'Find negative frequencies for non-TS species: {neg_freq}')
+    return freq, neg_freq
+
+
+def parse_frequencies(path: str,
+                      software: str,
+                      ) -> np.ndarray:
+    """
+    Parse the frequencies from a freq job output file.
+
+    Args:
+        path (str): The log file path.
+        software (str): The ESS.
+
+    Returns:
+        np.ndarray: The parsed frequencies (in cm^-1).
+    """
+    lines = _get_lines_from_file(path)
+    freqs = np.array([], np.float64)
+    if software.lower() == 'qchem':
+        for line in lines:
+            if ' Frequency:' in line:
+                items = line.split()
+                for i, item in enumerate(items):
+                    if i:
+                        freqs = np.append(freqs, [(float(item))])
+    elif software.lower() == 'gaussian':
+        with open(path, 'r') as f:
+            line = f.readline()
+            while line != '':
+                if 'Frequencies --' in line:
+                    freqs = np.append(freqs, [float(frq) for frq in line.split()[2:]])
+                line = f.readline()
+    elif software.lower() == 'molpro':
+        read = False
+        for line in lines:
+            if 'Nr' in line and '[1/cm]' in line:
+                continue
+            if read:
+                if line == os.linesep:
+                    read = False
+                    continue
+                freqs = np.append(freqs, [float(line.split()[-1])])
+            if 'Low' not in line and 'Vibration' in line and 'Wavenumber' in line:
+                read = True
+    elif software.lower() == 'orca':
+        with open(path, 'r') as f:
+            line = f.readline()
+            read = True
+            while line:
+                if 'VIBRATIONAL FREQUENCIES' in line:
+                    while read:
+                        if not line.strip():
+                            line = f.readline()
+                        elif not line.split()[0] == '0:':
+                            line = f.readline()
+                        else:
+                            read = False
+                    while line.strip():
+                        if float(line.split()[1]) != 0.0:
+                            freqs = np.append(freqs, [float(line.split()[1])])
+                        line = f.readline()
+                    break
+                else:
+                    line = f.readline()
+    elif software.lower() == 'terachem':
+        read_output = False
+        for line in lines:
+            if '=== Mode' in line:
+                # example: '=== Mode 1: 1198.526 cm^-1 ==='
+                freqs = np.append(freqs, [float(line.split()[3])])
+            elif 'Vibrational Frequencies/Thermochemical Analysis After Removing Rotation and Translation' in line:
+                read_output = True
+                continue
+            elif read_output:
+                if 'Temperature (Kelvin):' in line or 'Frequency(cm-1)' in line:
+                    continue
+                if not line.strip():
+                    break
+                # example:
+                # 'Mode  Eigenvalue(AU)  Frequency(cm-1)  Intensity(km/mol)   Vib.Temp(K)      ZPE(AU) ...'
+                # '  1     0.0331810528   170.5666870932      52.2294230772  245.3982965841   0.0003885795 ...'
+                freqs = np.append(freqs, [float(line.split()[2])])
+
+    else:
+        raise ParserError(f'parse_frequencies() can currently only parse Gaussian, Molpro, Orca, QChem and TeraChem '
+                          f'files, got {software}')
+    return freqs
+
+
+def check_gaussian_normal_termination(logfile):
+    with open(logfile, 'r') as f:
+        lines = f.readlines()
+        forward_lines = tuple(lines)
+    for line in forward_lines:
+        if 'Error termination' in line:
+            return False
+    else:
+        return True
+
+
+def parse_zpe(path: str) -> Optional[float]:
+    """
+    Determine the calculated ZPE from a frequency output file
+
+    Args:
+        path (str): The path to a frequency calculation output file.
+
+    Returns:
+        Optional[float]: The calculated zero point energy in kJ/mol.
+    """
+    if not os.path.isfile(path):
+        raise InputError('Could not find file {0}'.format(path))
+    log = ess_factory(fullpath=path)
+    try:
+        zpe = log.load_zero_point_energy() * 0.001  # convert to kJ/mol
+    except (LogError, NotImplementedError):
+        zpe = None
+    return zpe
+
+
+def get_gaussian_unscaled_zpe(logfile):
+    energy_dict = dict()
+    try:
+        zpe_kj_mol = parse_zpe(logfile)
+    except:
+        raise ParserError('Cannot parse energy from gaussian log file.')
+
+    zpe_j_mol = zpe_kj_mol * 1000
+    zpe_kcal_mol = zpe_j_mol / 4184
+    zpe_unscaled = round(zpe_j_mol/(constants.E_h * constants.Na), 9)
+
+    energy_dict['J/mol'] = zpe_j_mol
+    energy_dict['kJ/mol'] = zpe_kj_mol
+    energy_dict['kcal/mol'] = zpe_kcal_mol
+    energy_dict['hartree'] = zpe_unscaled
+    return energy_dict
+
+
+def get_gaussian_energy(logfile):
+    energy_dict = dict()
+    try:
+        e_kj_mol = parse_e_elect(logfile)
+    except:
+        raise ParserError('Cannot parse energy from gaussian log file.')
+
+    e_j_mol = e_kj_mol * 1000
+    e_kcal_mol = e_j_mol / 4184
+    e_elect = round(e_j_mol/(constants.E_h * constants.Na), 9)
+
+    energy_dict['J/mol'] = e_j_mol
+    energy_dict['kJ/mol'] = e_kj_mol
+    energy_dict['kcal/mol'] = e_kcal_mol
+    energy_dict['hartree'] = e_elect
+    return energy_dict
+
+
+def parse_e_elect(path: str,
+                  zpe_scale_factor: float = 1.,
+                  ) -> Optional[float]:
+    """
+    Parse the electronic energy from an sp job output file.
+
+    Args:
+        path (str): The ESS log file to parse from.
+        zpe_scale_factor (float): The ZPE scaling factor, used only for composite methods in Gaussian via Arkane.
+
+    Returns:
+        Optional[float]: The electronic energy in kJ/mol.
+    """
+    if not os.path.isfile(path):
+        raise InputError(f'Could not find file {path}')
+    log = ess_factory(fullpath=path)
+    try:
+        e_elect = log.load_energy(zpe_scale_factor) * 0.001  # convert to kJ/mol
+    except (LogError, NotImplementedError):
+        e_elect = None
+    return e_elect
+
+
+def get_gaussian_geometry(logfile):
+    xyz = parse_geometry(logfile)
+    return xyz
+
+
+def parse_geometry(path: str) -> Optional[Dict[str, tuple]]:
+    """
+    Parse the xyz geometry from an ESS log file.
+
+    Args:
+        path (str): The ESS log file to parse from.
+
+    Returns:
+        Optional[Dict[str, tuple]]: The cartesian geometry.
+    """
+    log = ess_factory(fullpath=path)
+    try:
+        coords, number, _ = log.load_geometry()
+    except LogError:
+        raise ParserError(f'Could not parse xyz from {path}')
+    return xyz_from_data(coords=coords, numbers=number)
+
+def xyz_from_data(coords, numbers=None, symbols=None, isotopes=None):
+    """
+    Get the ARC xyz dictionary format from raw data.
+    Either ``numbers`` or ``symbols`` must be specified.
+    If ``isotopes`` isn't specified, the most common isotopes will be assumed for all elements.
+
+    Args:
+        coords (tuple, list): The xyz coordinates.
+        numbers (tuple, list, optional): Element nuclear charge numbers.
+        symbols (tuple, list, optional): Element symbols.
+        isotopes (tuple, list, optional): Element isotope numbers.
+
+    Returns:
+        dict: The ARC dictionary xyz format.
+
+    Raises:
+        ConverterError: If neither ``numbers`` nor ``symbols`` are specified, if both are specified,
+                        or if the input lengths aren't consistent.
+    """
+    if isinstance(coords, np.ndarray):
+        coords = tuple(tuple(coord.tolist()) for coord in coords)
+    elif isinstance(coords, list):
+        coords = tuple(tuple(coord) for coord in coords)
+    if numbers is not None and isinstance(numbers, np.ndarray):
+        numbers = tuple(numbers.tolist())
+    elif numbers is not None and isinstance(numbers, list):
+        numbers = tuple(numbers)
+    if symbols is not None and isinstance(symbols, list):
+        symbols = tuple(symbols)
+    if isotopes is not None and isinstance(isotopes, list):
+        isotopes = tuple(isotopes)
+    if not isinstance(coords, tuple):
+        raise ConverterError('Expected coords to be a tuple, got {0} which is a {1}'.format(coords, type(coords)))
+    if numbers is not None and not isinstance(numbers, tuple):
+        raise ConverterError('Expected numbers to be a tuple, got {0} which is a {1}'.format(numbers, type(numbers)))
+    if symbols is not None and not isinstance(symbols, tuple):
+        raise ConverterError('Expected symbols to be a tuple, got {0} which is a {1}'.format(symbols, type(symbols)))
+    if isotopes is not None and not isinstance(isotopes, tuple):
+        raise ConverterError('Expected isotopes to be a tuple, got {0} which is a {1}'.format(isotopes, type(isotopes)))
+    if numbers is None and symbols is None:
+        raise ConverterError('Must set either "numbers" or "symbols". Got neither.')
+    if numbers is not None and symbols is not None:
+        raise ConverterError('Must set either "numbers" or "symbols". Got both.')
+    if numbers is not None:
+        symbols = tuple(symbol_by_number[number] for number in numbers)
+    if len(coords) != len(symbols):
+        raise ConverterError(f'The length of the coordinates ({len(coords)}) is different than the length of the '
+                             f'numbers/symbols ({len(symbols)}).')
+    if isotopes is not None and len(coords) != len(isotopes):
+        raise ConverterError(f'The length of the coordinates ({len(coords)}) is different than the length of isotopes '
+                             f'({len(isotopes)}).')
+    if isotopes is None:
+        isotopes = tuple(get_most_common_isotope_for_element(symbol) for symbol in symbols)
+    xyz_dict = {'symbols': symbols, 'isotopes': isotopes, 'coords': coords}
+    return xyz_dict
+
+def get_most_common_isotope_for_element(element_symbol):
+    """
+    Get the most common isotope for a given element symbol.
+
+    Args:
+        element_symbol (str): The element symbol.
+
+    Returns:
+        int: The most common isotope number for the element.
+             Returns ``None`` for dummy atoms ('X').
+    """
+    if element_symbol == 'X':
+        # this is a dummy atom (such as in a zmat)
+        return None
+    mass_list = mass_by_symbol[element_symbol]
+    if len(mass_list[0]) == 2:
+        # isotope contribution is unavailable, just get the first entry
+        isotope = mass_list[0][0]
+    else:
+        # isotope contribution is unavailable, get the most common isotope
+        isotope, isotope_contribution = mass_list[0][0], mass_list[0][2]
+        for iso in mass_list:
+            if iso[2] > isotope_contribution:
+                isotope_contribution = iso[2]
+                isotope = iso[0]
+    return isotope
+
+def _get_lines_from_file(path: str) -> List[str]:
+    """
+    A helper function for getting a list of lines from a file.
+
+    Args:
+        path (str): The file path.
+
+    Raises:
+        InputError: If the file could not be read.
+
+    Returns:
+        List[str]: Entries are lines from the file.
+    """
+    if os.path.isfile(path):
+        with open(path, 'r') as f:
+            lines = f.readlines()
+    else:
+        raise InputError(f'Could not find file {path}')
+    return lines
 # def convert_gaussian_zmat_to_arc_zmat(zmat_file_path: str,
 #                                       ) -> Dict:
 #     """
