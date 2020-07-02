@@ -60,7 +60,7 @@ def main():
     # opt_dir = os.path.join(project_dir, 'opt')
     opt_fine_dir = os.path.join(project_dir, 'opt_fine')
     # 0.2 Determine fine opt status
-    fine_opt_level_of_theory =  project_dir = opt_project_info['level_of_theory']['fine_opt_freq']
+    fine_opt_level_of_theory = opt_project_info['level_of_theory']['fine_opt_freq']
     if fine_opt_level_of_theory is None:
         has_fine_opted = None  # means fine opt is not specified/required
     else:
@@ -86,14 +86,14 @@ def main():
 
     # 1.1.1 load energy, freq, geom info from log
         for fingerprint in opted_conf_fingerprints:
-            opt_input_file_path = opt_project_info['file_path']['input']['opt_freq']
+            opt_input_file_path = opt_project_info['conformers'][fingerprint]['file_path']['input']['opt_freq']
             dir_name, file_name = os.path.split(opt_input_file_path)
             file_basename, file_extension = os.path.splitext(file_name)
             new_file_name = file_basename + '.log'
             opt_output_file_path = os.path.join(dir_name, new_file_name)
             if not os.path.exists(opt_output_file_path):
                 raise
-            opt_project_info['file_path']['output']['opt_freq'] = opt_output_file_path
+            opt_project_info['conformers'][fingerprint]['file_path']['output']['opt_freq'] = opt_output_file_path
             try:
                 fingerprint_to_all_opt_log_info_dict[fingerprint] = \
                     process_gaussian_opt_freq_output(opt_output_file_path)
@@ -139,12 +139,12 @@ def main():
             opt_project_info['conformers'][fingerprint]['xyz_str_after_opt'] = xyz_dict_to_xyz_str(xyz_dict)
 
             unscaled_zpe = fingerprint_to_all_opt_log_info_dict[fingerprint]['unscaled_zpe']['hartree']
-            opt_project_info['energy']['unscaled_zpe'] = unscaled_zpe
+            opt_project_info['conformers'][fingerprint]['energy']['unscaled_zpe'] = unscaled_zpe
 
             scaled_zpe = unscaled_zpe * zpe_scale_factor
-            opt_project_info['energy']['scaled_zpe'] = scaled_zpe
+            opt_project_info['conformers'][fingerprint]['energy']['scaled_zpe'] = scaled_zpe
 
-            opt_project_info['energy']['end_of_opt'] = \
+            opt_project_info['conformers'][fingerprint]['energy']['end_of_opt'] = \
                 fingerprint_to_all_opt_log_info_dict[fingerprint]['electronic_energy']['hartree']
 
     # (b) Assume we are analyzing fine opt results
@@ -157,14 +157,14 @@ def main():
 
         # 1.1.1 load energy, freq, geom info from log
         for fingerprint in opted_conf_fingerprints:
-            opt_input_file_path = opt_project_info['file_path']['input']['fine_opt_freq']
+            opt_input_file_path = opt_project_info['conformers'][fingerprint]['file_path']['input']['fine_opt_freq']
             dir_name, file_name = os.path.split(opt_input_file_path)
             file_basename, file_extension = os.path.splitext(file_name)
             new_file_name = file_basename + '.log'
             opt_output_file_path = os.path.join(dir_name, new_file_name)
             if not os.path.exists(opt_output_file_path):
                 raise
-            opt_project_info['file_path']['output']['fine_opt_freq'] = opt_output_file_path
+            opt_project_info['conformers'][fingerprint]['file_path']['output']['fine_opt_freq'] = opt_output_file_path
             try:
                 fingerprint_to_all_opt_log_info_dict[fingerprint] = \
                     process_gaussian_opt_freq_output(opt_output_file_path)
@@ -209,12 +209,12 @@ def main():
             opt_project_info['conformers'][fingerprint]['xyz_str_after_fine_opt'] = xyz_dict_to_xyz_str(xyz_dict)
 
             unscaled_zpe = fingerprint_to_all_opt_log_info_dict[fingerprint]['unscaled_zpe']['hartree']
-            opt_project_info['energy']['unscaled_zpe_fine'] = unscaled_zpe
+            opt_project_info['conformers'][fingerprint]['energy']['unscaled_zpe_fine'] = unscaled_zpe
 
             scaled_zpe = unscaled_zpe * zpe_scale_factor
-            opt_project_info['energy']['scaled_zpe_fine'] = scaled_zpe
+            opt_project_info['conformers'][fingerprint]['energy']['scaled_zpe_fine'] = scaled_zpe
 
-            opt_project_info['energy']['end_of_fine_opt'] = \
+            opt_project_info['conformers'][fingerprint]['energy']['end_of_fine_opt'] = \
                 fingerprint_to_all_opt_log_info_dict[fingerprint]['electronic_energy']['hartree']
 
         valid_conformer_hash_ids = deepcopy(checked_conformer_hash_ids)
@@ -235,7 +235,7 @@ def main():
         mkdir(opt_fine_dir)
 
         level_of_theory = opt_project_info['level_of_theory']['fine_opt_freq']
-        if level_of_theory not in ['cbs-qb3']:
+        if level_of_theory.lower() not in ['cbs-qb3']:
             if multiplicity == 2:
                 level_of_theory = 'u' + level_of_theory
 
@@ -280,7 +280,7 @@ def main():
         # todo: deal with non cbs-qb3 methods
         # todo: deal with other solvation correction methods
         level_of_theory = opt_project_info['level_of_theory']['fine_opt_freq']
-        if level_of_theory not in ['cbs-qb3']:
+        if level_of_theory.lower() not in ['cbs-qb3']:
             raise NotImplementedError
         solvation_method = opt_project_info['level_of_theory']['solv_correction']
         if solvation_method not in ['cosmo']:

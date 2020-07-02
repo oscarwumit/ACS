@@ -232,7 +232,7 @@ def main():
     # todo: deal with other levels and multiplicity = 3
     # assume multiplicity = 1 or 2 here
     level_of_theory = opt_project_info['level_of_theory']['opt_freq']
-    if level_of_theory not in ['cbs-qb3']:
+    if level_of_theory.lower() not in ['cbs-qb3']:
         if multiplicity == 2:
             level_of_theory = 'u' + level_of_theory
 
