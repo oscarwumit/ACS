@@ -251,3 +251,41 @@ $cosmotherm $input.inp
 
 
 """
+
+
+turbomole_cosmo_slurm_array_script = """#!/bin/bash
+#SBATCH -J tmole
+#SBATCH -n 1
+#SBATCH --mem-per-cpu=1000
+#SBATCH --array=0-{last_job_num}
+
+# set up the path
+TURBODIR=/home/gridsan/groups/RMG/Software/TmoleX19/TURBOMOLE
+source $TURBODIR/Config_turbo_env
+
+jnum=$SLURM_ARRAY_TASK_ID
+fin=$(echo ${{jnum}}_*.txt)
+#fout="${{fin%.*}}".out
+
+input=`basename $fin .txt`
+
+# create a working directory
+WorkDir=~/scratch/$SLURM_JOB_NAME-$SLURM_JOB_ID
+mkdir -p $WorkDir
+export TURBOTMPDIR=$WorkDir
+cd $WorkDir
+cp $SLURM_SUBMIT_DIR/$input.txt $WorkDir
+cp -r $SLURM_SUBMIT_DIR/xyz $WorkDir
+
+# run the job. 
+# list.txt: each line contains the molecule name, charge and multiplicity separated by blank space
+# xyz: a directory that contains the xyz coordinate of the molecule. The file name must match the name of the molecule in list.txt. xyz file of each molecule must contain the number of atoms on the first line, and the second line should be either left blank or just a comment, and xyz coordinates must start from the 3rd line 
+calculate -l $input.txt -m BP-TZVPD-FINE-COSMO-SP -f xyz -din xyz > $input.log
+
+# move the files back to the submit dir and remove the work dir
+mv -n $WorkDir/CosmofilesBP-TZVPD-FINE-COSMO-SP/*.cosmo $SLURM_SUBMIT_DIR
+rm -r $WorkDir
+
+
+
+"""
