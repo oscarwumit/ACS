@@ -119,6 +119,41 @@ def gen_gaussian_input_file(name: str,
 """
     return script
 
+
+def read_cosmo_gsolv(path: str,
+                     use_hartree: bool = True,
+                     ) -> float:
+    """
+    Read Gsolv from cosmo tab output. If the tab file contains results from multiple temperatures, only the first one
+    is read.
+
+    Args:
+        path: cosmo tab file path.
+        use_hartree: whether to return Gsolv in hartree (True, Default) or kcal/mol.
+
+    Returns:
+        Float of Gsolv in hartree.
+    """
+
+    with open(path, 'r') as f:
+        lines = f.readlines()
+
+    spc_name = os.path.splitext(os.path.basename(path))[0]
+    hartree_to_kcal_per_mol = 627.5094740631
+
+    for l in tuple(lines):
+        if spc_name in l:
+            g_solv = float(l.split()[5])
+            break
+    else:
+        raise ParserError(f'Did not found Gsolv for species {spc_name} in file {path}')
+
+    if use_hartree:
+        return g_solv/hartree_to_kcal_per_mol
+    else:
+        return g_solv
+
+
 def gen_gaussian_cosmo_sp_input_file(name: str,
                                     xyz_str: str,
                                     charge: int,
