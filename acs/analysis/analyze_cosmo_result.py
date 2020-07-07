@@ -6,6 +6,7 @@ import os
 import argparse
 
 from acs.common import read_yaml_file, write_yaml_file, read_cosmo_gsolv
+from copy import deepcopy
 
 
 
@@ -57,10 +58,25 @@ def main():
         else:
             raise NotImplementedError
 
-    # 2. Save fine opt project info (assume all calcs are done and all energies are parsed)
-        full_project_info_path = os.path.join(project_dir, 'full_project_info.yml')
-        write_yaml_file(path=full_project_info_path, content=cosmo_project_info)
+    # 2. Save final project info (assume all calcs are done and all energies are parsed)
+    final_project_info = deepcopy(cosmo_project_info)
+    all_ids = tuple(final_project_info['conformers'].keys())
+    for fingerprint in all_ids:
+        if fingerprint not in valid_conformer_hash_ids:
+            del final_project_info['conformers'][fingerprint]
 
+    del final_project_info['is_initial_sp_screening']
+    del final_project_info['conformer_to_opt_hash_ids']
+    del final_project_info['conformer_to_fine_opt_hash_ids']
+    del final_project_info['colliding_conformer_after_opt_hash_ids']
+    del final_project_info['crashing_conformer_in_opt_hash_ids']
+    del final_project_info['colliding_conformer_after_fine_opt_hash_ids']
+    del final_project_info['crashing_conformer_in_fine_opt_hash_ids']
+    del final_project_info['conformer_to_calc_sp_after_opt_hash_ids']
+    del final_project_info['conformer_to_calc_solv_hash_ids']
+
+    full_project_info_path = os.path.join(project_dir, 'final_project_info.yml')
+    write_yaml_file(path=full_project_info_path, content=final_project_info)
 
 
 if __name__ == '__main__':
