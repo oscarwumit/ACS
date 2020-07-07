@@ -2,6 +2,10 @@
 This module contains scripts which are shared across multiple ACS modules.
 """
 
+# todo: make level of theory consistent with ARC or Arkane implmentation, maybe we should use a dictionary so that we
+#    can better specify software, level, basis, aux-basis, dispersion etc
+
+
 default_job_info_dict_after_initial_sp_screening = \
 {
 'project': None,  # project name, str
@@ -18,6 +22,9 @@ default_job_info_dict_after_initial_sp_screening = \
 'project_folder_path': None,  # absolute path where the project info is saved, str
 'calc_solvation_sp_correction': None,  # bool
 'comment': None,  # reserved for additional info
+'use_atom_corrections': None,
+'use_bond_corrections': None,
+'freq_scale_factor': None,
 
 'level_of_theory': {
                     'initial_screening_sp': None,  # initial sp energy used to screen conformers, hartree, float
@@ -123,6 +130,9 @@ default_job_info_dict_for_initial_sp_screening = \
 'n_point_each_torsion': None,
 'comment': None,  # reserved for additional info
 'memory': None,  # job memory
+'use_atom_corrections': None,
+'use_bond_corrections': None,
+'freq_scale_factor': None,
 
 'level_of_theory': {
                     'initial_screening_sp': None,  # initial sp energy used to screen conformers, hartree, float
