@@ -131,6 +131,7 @@ def main():
 
     # 1.1.5 populate valid conformer information
         # checked conf should also pass other tests such as isomorphism, bond distance, volume etc. Here only use rmsd.
+        # todo: save frequency for jobs that do not need fine opt
         checked_conformer_hash_ids = tuple(distinct_conformer_hash_ids)
 
         for fingerprint in checked_conformer_hash_ids:
@@ -203,6 +204,11 @@ def main():
 
             opt_project_info['conformers'][fingerprint]['energy']['end_of_fine_opt'] = \
                 fingerprint_to_all_opt_log_info_dict[fingerprint]['electronic_energy']['hartree']
+
+            opt_project_info['conformers'][fingerprint]['frequencies'] = \
+                fingerprint_to_all_opt_log_info_dict[fingerprint]['freq'][0]
+            opt_project_info['conformers'][fingerprint]['negative_frequencies'] = \
+                fingerprint_to_all_opt_log_info_dict[fingerprint]['freq'][1]
 
         valid_conformer_hash_ids = deepcopy(checked_conformer_hash_ids)
         opt_project_info['valid_conformer_hash_ids'] = valid_conformer_hash_ids
