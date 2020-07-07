@@ -275,6 +275,8 @@ def parse_frequencies(path: str,
         with open(path, 'r') as f:
             line = f.readline()
             while line != '':
+                if 'Diagonal vibrational polarizability' in line:
+                    freqs = np.array([], np.float64)
                 if 'Frequencies --' in line:
                     freqs = np.append(freqs, [float(frq) for frq in line.split()[2:]])
                 line = f.readline()
