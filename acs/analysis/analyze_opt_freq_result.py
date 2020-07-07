@@ -133,17 +133,10 @@ def main():
         # checked conf should also pass other tests such as isomorphism, bond distance, volume etc. Here only use rmsd.
         checked_conformer_hash_ids = tuple(distinct_conformer_hash_ids)
 
-        zpe_scale_factor = opt_project_info.get('zpe_scale_factor', 1.0)
         for fingerprint in checked_conformer_hash_ids:
             xyz_dict = fingerprint_to_all_opt_log_info_dict[fingerprint]['xyz_dict']
             opt_project_info['conformers'][fingerprint]['arc_xyz_after_opt'] = xyz_dict
             opt_project_info['conformers'][fingerprint]['xyz_str_after_opt'] = xyz_dict_to_xyz_str(xyz_dict)
-
-            unscaled_zpe = fingerprint_to_all_opt_log_info_dict[fingerprint]['unscaled_zpe']['hartree']
-            opt_project_info['conformers'][fingerprint]['energy']['unscaled_zpe'] = unscaled_zpe
-
-            scaled_zpe = unscaled_zpe * zpe_scale_factor
-            opt_project_info['conformers'][fingerprint]['energy']['scaled_zpe'] = scaled_zpe
 
             opt_project_info['conformers'][fingerprint]['energy']['end_of_opt'] = \
                 fingerprint_to_all_opt_log_info_dict[fingerprint]['electronic_energy']['hartree']
@@ -203,17 +196,10 @@ def main():
         # checked conf should also pass other tests such as isomorphism, bond distance, volume etc. Here only use rmsd.
         checked_conformer_hash_ids = tuple(distinct_conformer_hash_ids)
 
-        zpe_scale_factor = opt_project_info.get('zpe_scale_factor_fine', 1.0)
         for fingerprint in checked_conformer_hash_ids:
             xyz_dict = fingerprint_to_all_opt_log_info_dict[fingerprint]['xyz_dict']
             opt_project_info['conformers'][fingerprint]['arc_xyz_after_fine_opt'] = xyz_dict
             opt_project_info['conformers'][fingerprint]['xyz_str_after_fine_opt'] = xyz_dict_to_xyz_str(xyz_dict)
-
-            unscaled_zpe = fingerprint_to_all_opt_log_info_dict[fingerprint]['unscaled_zpe']['hartree']
-            opt_project_info['conformers'][fingerprint]['energy']['unscaled_zpe_fine'] = unscaled_zpe
-
-            scaled_zpe = unscaled_zpe * zpe_scale_factor
-            opt_project_info['conformers'][fingerprint]['energy']['scaled_zpe_fine'] = scaled_zpe
 
             opt_project_info['conformers'][fingerprint]['energy']['end_of_fine_opt'] = \
                 fingerprint_to_all_opt_log_info_dict[fingerprint]['electronic_energy']['hartree']

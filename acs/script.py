@@ -65,8 +65,6 @@ default_conformer_info_dict_after_initial_sp_screening = \
 'is_distinct': None, # bool
 'frequencies': None,  # tuple
 'negative_frequencies': None,  # tuple
-'zpe_scale_factor': None, # float
-'zpe_scale_factor_fine': None, # float
 'xyz_str_before_opt': None,  # xyz format with atom symbol and coords only (no charge/multiplicity/atom count)
 'arc_xyz_before_opt': None,  # arc_xyz format
 'xyz_str_after_opt': None,  # xyz format with atom symbol and coords only (no charge/multiplicity/atom count)
@@ -78,10 +76,6 @@ default_conformer_info_dict_after_initial_sp_screening = \
             'initial_screening_sp': None,
             'end_of_opt': None,
             'end_of_fine_opt': None,
-            'unscaled_zpe': None,
-            'scaled_zpe': None,
-            'unscaled_zpe_fine': None,
-            'scaled_zpe_fine': None,
             'sp_after_opt': None,
             'solv_sp_gas': None,
             'solv_sp_liq': None,
