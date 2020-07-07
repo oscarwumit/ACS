@@ -222,7 +222,7 @@ def process_gaussian_opt_freq_output(logfile, is_ts=True, check_neg_freq=True):
     if not check_gaussian_normal_termination(logfile):
         raise ParserError('Gaussian error termination.')
     info = dict()
-    info['freq'] = get_gaussian_freq(logfile, check_neg_freq=is_ts, ts=check_neg_freq)
+    info['freq'] = get_gaussian_freq(logfile, check_neg_freq=check_neg_freq, ts=is_ts)
     info['xyz_dict'] = get_gaussian_geometry(logfile)
     info['electronic_energy'] = get_gaussian_energy(logfile)
     info['unscaled_zpe'] = get_gaussian_unscaled_zpe(logfile)

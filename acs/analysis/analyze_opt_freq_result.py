@@ -97,7 +97,7 @@ def main():
             opt_project_info['conformers'][fingerprint]['file_path']['output']['opt_freq'] = opt_output_file_path
             try:
                 fingerprint_to_all_opt_log_info_dict[fingerprint] = \
-                    process_gaussian_opt_freq_output(opt_output_file_path)
+                    process_gaussian_opt_freq_output(logfile=opt_output_file_path, is_ts=is_ts)
                 normal_termination_conformer_hash_ids.append(fingerprint)
             except ParserError:
                 crashing_conformer_hash_ids.append(fingerprint)
@@ -162,7 +162,7 @@ def main():
             opt_project_info['conformers'][fingerprint]['file_path']['output']['fine_opt_freq'] = opt_output_file_path
             try:
                 fingerprint_to_all_opt_log_info_dict[fingerprint] = \
-                    process_gaussian_opt_freq_output(opt_output_file_path)
+                    process_gaussian_opt_freq_output(logfile=opt_output_file_path, is_ts=is_ts)
                 normal_termination_conformer_hash_ids.append(fingerprint)
             except ParserError:
                 crashing_conformer_hash_ids.append(fingerprint)
