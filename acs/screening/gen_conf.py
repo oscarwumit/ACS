@@ -181,6 +181,8 @@ def main():
     project_info.update(input_dict)
     project_info['project_folder_path'] = project_directory
 
+    is_ts = project_info['species']['is_ts']
+
     # 0.2 Load geometry from input file
     # todo: deal with other coord inputs
     # here assume xyz_str is always there, obviously we need to improve this
@@ -194,7 +196,7 @@ def main():
     pybel_mol = pybel.readstring('xyz', xyz_file)
 
     # 1.1.a Process TS conformer
-    if project_info['species']['is_ts']:
+    if is_ts:
         # 1.1.a.1  Perceive TS
         rdkitts = RDKitTS.FromOBMol(pybel_mol.OBMol)
         rdkitts.EmbedConformer()
@@ -230,7 +232,7 @@ def main():
 
     # 1.2 Use RDKit to generate conformers
     # 1.2.1.a Initialize a TS conformer instance
-    if project_info['species']['is_ts']:
+    if is_ts:
         rdkitts.EmbedConformer()
         conf = rdkitts.GetConformer()
     # 1.2.1.b Initialize a non-TS conformer instance
@@ -247,7 +249,10 @@ def main():
     torsions = None
     ######################################
     if not torsions:
-        torsions = rdkitts.GetTorsionalModes()
+        if is_ts:
+            torsions = rdkitts.GetTorsionalModes()
+        else:
+            torsions = rdkitmol.GetTorsionalModes()
         # print(f'RDKit perceived torsions: {torsions}')
 
     conf.SetTorsionalModes(torsions)
@@ -259,8 +264,12 @@ def main():
 
     # Save to dict
     project_info['species']['1d_torsions'] = torsions
-    project_info['species']['coord']['connectivity'] = tuple([sorted((bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()))
-                                                              for bond in rdkitts.GetBonds()])
+    if is_ts:
+        project_info['species']['coord']['connectivity'] = tuple([sorted((bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()))
+                                                                  for bond in rdkitts.GetBonds()])
+    else:
+        project_info['species']['coord']['connectivity'] = tuple([sorted((bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()))
+                                                                  for bond in rdkitmol.GetBonds()])
 
     # 1.2.3 Generate conformers according to the mangle mesh
     # todo: make this a function
