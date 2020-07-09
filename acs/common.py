@@ -17,6 +17,7 @@ import scipy.ndimage.filters as filters
 import scipy.ndimage.morphology as morphology
 from scipy import interpolate
 from scipy.optimize import minimize
+from rmsd import calculate_rmsd as calrmsd
 
 # from arc.species.species import ARCSpecies
 # from arc.species.converter import xyz_to_xyz_file_format, str_to_zmat, zmat_to_xyz, modify_coords
@@ -26,6 +27,8 @@ from arkane.exceptions import LogError
 import rmgpy.constants as constants
 from arkane.common import get_element_mass, mass_by_symbol, symbol_by_number
 import qcelemental as qcel
+
+from acs.converter.geom import xyz_dict_to_xyz_file
 
 
 def read_yaml_file(path: str,
@@ -617,8 +620,16 @@ def compare_confs(xyz1: dict,
     xyz1, xyz2 = check_xyz_dict(xyz1), check_xyz_dict(xyz2)
     dmat1, dmat2 = xyz_to_dmat(xyz1), xyz_to_dmat(xyz2)
     if rmsd_score:
+        # method 1: use distance matrix
         # distance matrix is symmetric, only need the upper triangular part to compute rmsd
-        rmsd = calc_rmsd(np.triu(dmat1), np.triu(dmat2))
+        rmsd_1 = calc_rmsd(np.triu(dmat1), np.triu(dmat2))
+
+        # method 2: use Kabsch algorithm (works better for indistinguishable H atoms)
+        # https://github.com/charnley/rmsd
+        rmsd_2 = calc_rmsd_wrapper(xyz1, xyz2)
+
+        rmsd = min((rmsd_1, rmsd_2))
+
         return rmsd
     else:
         return almost_equal_lists(dmat1, dmat2, rtol=rtol, atol=atol)
@@ -672,6 +683,54 @@ def calc_rmsd(x: np.array,
     sqr_sum = (d**2).sum()
     rmsd = np.sqrt(sqr_sum/n)
     return float(rmsd)
+
+def calc_rmsd_wrapper(xyz_1: dict,
+                      xyz_2: dict,
+                      ) -> float:
+    """
+    A wrapper for https://github.com/charnley/rmsd.
+    Calculate RMSD from xyz dict.
+
+    Args:
+        xyz_1 (dict): XYZ coordinate of species 1.
+        xyz_2 (dict): XYZ coordinate of species 2.
+
+    Returns:
+        float: The RMSD between two species.
+    """
+
+    p_all_atoms, p_all = np.array(xyz_1['symbols']), np.array(xyz_1['coords'])
+    q_all_atoms, q_all = np.array(xyz_2['symbols']), np.array(xyz_2['coords'])
+
+    p_size = p_all.shape[0]
+    q_size = q_all.shape[0]
+
+    if not p_size == q_size:
+        raise ParserError('Does not make sense to compute RMSD of conformers with different sizes.')
+
+    p_coord = deepcopy(p_all)
+    q_coord = deepcopy(q_all)
+    p_atoms = deepcopy(p_all_atoms)
+    q_atoms = deepcopy(q_all_atoms)
+
+    p_cent = calrmsd.centroid(p_coord)
+    q_cent = calrmsd.centroid(q_coord)
+    p_coord -= p_cent
+    q_coord -= q_cent
+
+    rotation_method = calrmsd.kabsch_rmsd
+    reorder_method = calrmsd.reorder_hungarian
+
+    q_review = reorder_method(p_atoms, q_atoms, p_coord, q_coord)
+    q_coord = q_coord[q_review]
+    q_atoms = q_atoms[q_review]
+
+    if not all(p_atoms == q_atoms):
+        raise ParserError("Structure not aligned.")
+
+    rmsd = rotation_method(p_coord, q_coord)
+    return float(rmsd)
+
 
 def check_xyz_dict(xyz):
     """
