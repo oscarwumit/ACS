@@ -275,8 +275,7 @@ def main():
     # todo: make this a function
     n_point_each_torsion = project_info.get('n_point_each_torsion', 20)
     project_info['n_point_each_torsion'] = n_point_each_torsion
-    # todo: enable higher dimensions
-    n_dimension = 2
+    n_dimension = project_info.get('n_rotors_to_couple', 2)
 
     bookkeeps = []
 

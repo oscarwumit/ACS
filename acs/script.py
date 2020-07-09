@@ -128,6 +128,7 @@ default_job_info_dict_for_initial_sp_screening = \
 'calc_solvation_sp_correction': None,  # bool
 'dihedrals_considered_in_this_file': None,  # tuple of dihedrals considered in this file, useful for splitting files for parallelization
 'n_point_each_torsion': None,
+'n_rotors_to_couple': None,
 'comment': None,  # reserved for additional info
 'memory': None,  # job memory
 'use_atom_corrections': None,
