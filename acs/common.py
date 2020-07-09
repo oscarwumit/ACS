@@ -18,7 +18,7 @@ import scipy.ndimage.filters as filters
 import scipy.ndimage.morphology as morphology
 from scipy import interpolate
 from scipy.optimize import minimize
-from rmsd import calculate_rmsd as calrmsd
+from acs.backend import calculate_rmsd as calrmsd
 
 # from arc.species.species import ARCSpecies
 # from arc.species.converter import xyz_to_xyz_file_format, str_to_zmat, zmat_to_xyz, modify_coords
