@@ -97,12 +97,15 @@ def conformers_by_change_torsions(conf: 'RDKitConf',
         torsions (list): A list of four-atom-index lists indicating the torsional modes.
         on_the_fly_filter (bool): Whether to check colliding atoms on the fly.
     """
+    # todo: extend this function to accomodate different dimensionality
     if not torsions:
         # Torsions are not set, assuming changing all of the torsions
         torsions = conf.GetTorsionalModes()
 
     ref_xyz_dict = bookkeep['species']['coord']['arc_xyz']
     n_torsions = len(torsions)
+    if n_torsions not in (1, 2):
+        raise NotImplementedError
     index_1 = -1
     index_2 = 0
     lookup = set()
@@ -124,10 +127,12 @@ def conformers_by_change_torsions(conf: 'RDKitConf',
             bookkeep['conformers'][hash_key]['dihedral'].append([tuple(tor), angle])
 
         bookkeep['conformers'][hash_key]['dihedral'][0].append(index_1)
-        bookkeep['conformers'][hash_key]['dihedral'][1].append(index_2)
+        if n_torsions == 2:
+            bookkeep['conformers'][hash_key]['dihedral'][1].append(index_2)
 
         bookkeep['conformers'][hash_key]['dihedral'][0] = tuple(bookkeep['conformers'][hash_key]['dihedral'][0])
-        bookkeep['conformers'][hash_key]['dihedral'][1] = tuple(bookkeep['conformers'][hash_key]['dihedral'][1])
+        if n_torsions == 2:
+            bookkeep['conformers'][hash_key]['dihedral'][1] = tuple(bookkeep['conformers'][hash_key]['dihedral'][1])
 
         bookkeep['conformers'][hash_key]['dihedral'] = tuple(bookkeep['conformers'][hash_key]['dihedral'])
         index_2 += 1
@@ -276,6 +281,7 @@ def main():
     n_point_each_torsion = project_info.get('n_point_each_torsion', 20)
     project_info['n_point_each_torsion'] = n_point_each_torsion
     n_dimension = project_info.get('n_rotors_to_couple', 2)
+    project_info['n_rotors_to_couple'] = n_dimension
 
     bookkeeps = []
 
