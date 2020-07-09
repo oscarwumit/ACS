@@ -285,9 +285,11 @@ cp -r $SLURM_SUBMIT_DIR/xyz $WorkDir
 # list.txt: each line contains the molecule name, charge and multiplicity separated by blank space
 # xyz: a directory that contains the xyz coordinate of the molecule. The file name must match the name of the molecule in list.txt. xyz file of each molecule must contain the number of atoms on the first line, and the second line should be either left blank or just a comment, and xyz coordinates must start from the 3rd line 
 calculate -l $input.txt -m BP-TZVPD-FINE-COSMO-SP -f xyz -din xyz > $input.log
+calculate -l $input.txt -m BP-TZVPD-GAS-SP -f xyz -din xyz > $input.log
 
 # move the files back to the submit dir and remove the work dir
 mv -n $WorkDir/CosmofilesBP-TZVPD-FINE-COSMO-SP/*.cosmo $SLURM_SUBMIT_DIR
+mv -n $WorkDir/EnergyfilesBP-TZVPD-FINE-COSMO-SP/*.energy $SLURM_SUBMIT_DIR
 rm -r $WorkDir
 
 
