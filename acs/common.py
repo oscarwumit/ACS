@@ -10,6 +10,7 @@ from typing import Any, List, Optional, Tuple, Union, Dict, Iterable
 import shutil
 
 from copy import deepcopy
+from itertools import product
 import numpy as np
 import pandas as pd
 
@@ -17,7 +18,7 @@ import scipy.ndimage.filters as filters
 import scipy.ndimage.morphology as morphology
 from scipy import interpolate
 from scipy.optimize import minimize
-from rmsd import calculate_rmsd as calrmsd
+from acs.backend import calculate_rmsd as calrmsd
 
 # from arc.species.species import ARCSpecies
 # from arc.species.converter import xyz_to_xyz_file_format, str_to_zmat, zmat_to_xyz, modify_coords
@@ -718,18 +719,23 @@ def calc_rmsd_wrapper(xyz_1: dict,
     p_coord -= p_cent
     q_coord -= q_cent
 
-    rotation_method = calrmsd.kabsch_rmsd
-    reorder_method = calrmsd.reorder_hungarian
+    rmsds = list()
+    rotation_methods = (calrmsd.kabsch_rmsd, calrmsd.quaternion_rmsd)
+    reorder_methods = (calrmsd.reorder_hungarian, calrmsd.reorder_inertia_hungarian)
 
-    q_review = reorder_method(p_atoms, q_atoms, p_coord, q_coord)
-    q_coord = q_coord[q_review]
-    q_atoms = q_atoms[q_review]
+    for rotation_method, reorder_method in product(rotation_methods, reorder_methods):
+        result_rmsd, q_swap, q_reflection, q_review = calrmsd.check_reflections(
+            p_atoms,
+            q_atoms,
+            p_coord,
+            q_coord,
+            reorder_method=reorder_method,
+            rotation_method=rotation_method,
+            keep_stereo=True)
+        rmsds.append(float(result_rmsd))
 
-    if not all(p_atoms == q_atoms):
-        raise ParserError("Structure not aligned.")
-
-    rmsd = rotation_method(p_coord, q_coord)
-    return float(rmsd)
+    rmsd = min(rmsds)
+    return rmsd
 
 
 def check_xyz_dict(xyz):
