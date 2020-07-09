@@ -122,6 +122,7 @@ def main():
     screening_input_file = args.file
     # input_file_dir = os.path.abspath(os.path.dirname(args.file)) # todo: use this to decude abs path if folder moved
     screen_project_info = read_yaml_file(screening_input_file)
+    n_rotors_to_couple = screen_project_info.get('n_rotors_to_couple', 2)
     project_dir = screen_project_info['project_folder_path']
     screen_dir = os.path.join(project_dir, 'initial_sp_screening')
     # 0.2 Initialize optimization project info
@@ -164,7 +165,13 @@ def main():
         for fingerprint in screen_result['conformers'].keys():
             dihedral = screen_result['conformers'][fingerprint]['dihedral']
             index = tuple([d[-1] for d in dihedral])
-            index_to_id[index] = fingerprint
+            # todo: better treat different dimensions
+            if n_rotors_to_couple == 1:
+                index_1 = tuple([[d[-1] for d in dihedral][0], 0])
+                index_to_id[index_1] = fingerprint
+            else:
+                index_to_id[index] = fingerprint
+
             if fingerprint not in (collide + crash):
                 energies[index] = screen_result['conformers'][fingerprint]['initial_screening_sp_energy']
             elif fingerprint in collide:
@@ -185,8 +192,14 @@ def main():
 
     # 1.1.4 For crashing conformers, set the energy (np.nan) via linear interpolation
         # todo: save dataframe, also deal with non-even sampling
+        # todo: better treat different dimensions
         label = [str(int(n * 360 / num_sampling)) for n in range(num_sampling)]
-        df = pd.DataFrame(energies, index=label, columns=label)
+        if n_rotors_to_couple == 2:
+            df = pd.DataFrame(energies, index=label, columns=label)
+        elif n_rotors_to_couple == 1:
+            df = pd.DataFrame(energies, index=label, columns=['0'])
+        else:
+            raise NotImplementedError
         df = df.interpolate(method='linear', axis=0, limit_direction='both').interpolate(method='linear', axis=1,
                                                                                          limit_direction='both')
         energies = df.to_numpy()
@@ -198,7 +211,8 @@ def main():
     # 2. Search for minima in energy array
         # todo: alternative method via function fitting and optimization
     # 2.1 Greedy search for minima in array
-        minimum_points = search_minimum(energies, fsize=2)
+        # todo: better treat different dimensions, the output when fsize=1 should not be a tuple of two indices
+        minimum_points = search_minimum(energies, fsize=n_rotors_to_couple)
     # 2.2 Set an energy ceiling
         ceiling = 1.0  # 1 hartree = 627.509 kcal/mol, it seems high but the geom is not optimized
         minimum_points = [i for i in minimum_points if energies[i] < ceiling]
