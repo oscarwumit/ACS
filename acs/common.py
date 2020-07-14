@@ -92,16 +92,16 @@ def update_selected_keys(dict1: dict,
             dict1_cp[k] = dict2[k]
     return dict1_cp
 
-def gen_gaussian_input_file(name: str,
-                            xyz_str: str,
-                            charge: int,
-                            multiplicity: int,
-                            memory_mb: int,
-                            cpu_threads: int,
-                            is_ts: bool,
-                            level_of_theory: str,
-                            comment: str = '',
-                            ) -> str:
+def gen_gaussian_optfreq_input_file(name: str,
+                                    xyz_str: str,
+                                    charge: int,
+                                    multiplicity: int,
+                                    memory_mb: int,
+                                    cpu_threads: int,
+                                    is_ts: bool,
+                                    level_of_theory: str,
+                                    comment: str = '',
+                                    ) -> str:
     if is_ts:
         title_card = "#p opt=(calcall,ts,noeigentest,maxcycles=120) freq guess=mix scf=xqc iop(2/9=2000)"
     else:

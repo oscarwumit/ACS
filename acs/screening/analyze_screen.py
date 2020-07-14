@@ -13,7 +13,7 @@ import seaborn as sns
 from matplotlib.patches import Rectangle
 from copy import deepcopy
 
-from acs.common import read_yaml_file, write_yaml_file, mkdir, update_selected_keys, gen_gaussian_input_file
+from acs.common import read_yaml_file, write_yaml_file, mkdir, update_selected_keys, gen_gaussian_optfreq_input_file
 from acs.script import default_job_info_dict_after_initial_sp_screening, g16_slurm_array_script, \
     default_conformer_info_dict_after_initial_sp_screening
 
@@ -260,16 +260,16 @@ def main():
         xyz_str = opt_project_info['conformers'][fingerprint]['xyz_str_before_opt']
 
         opt_input_file_basename = opt_input_file_name.split('.')[0]
-        opt_input_file = gen_gaussian_input_file(name=opt_input_file_basename ,
-                                                    xyz_str=xyz_str,
-                                                    charge=charge,
-                                                    multiplicity=multiplicity,
-                                                    memory_mb=300000,
-                                                    cpu_threads=40,
-                                                    is_ts=is_ts,
-                                                    level_of_theory=level_of_theory,
-                                                    comment=str(fingerprint),
-                                                    )
+        opt_input_file = gen_gaussian_optfreq_input_file(name=opt_input_file_basename,
+                                                         xyz_str=xyz_str,
+                                                         charge=charge,
+                                                         multiplicity=multiplicity,
+                                                         memory_mb=300000,
+                                                         cpu_threads=40,
+                                                         is_ts=is_ts,
+                                                         level_of_theory=level_of_theory,
+                                                         comment=str(fingerprint),
+                                                         )
 
         opt_project_info['conformers'][fingerprint]['file_path']['input']['opt_freq'] = opt_input_file_path
 

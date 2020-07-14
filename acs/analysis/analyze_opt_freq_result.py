@@ -12,7 +12,7 @@ import numpy as np
 import seaborn as sns
 from matplotlib.patches import Rectangle
 
-from acs.common import read_yaml_file, write_yaml_file, mkdir, update_selected_keys, gen_gaussian_input_file, \
+from acs.common import read_yaml_file, write_yaml_file, mkdir, update_selected_keys, gen_gaussian_optfreq_input_file, \
     process_gaussian_opt_freq_output, cluster_confs_by_rmsd_with_id, gen_gaussian_cosmo_sp_input_file, \
     gen_cosmo_rs_input_file
 from acs.script import default_job_info_dict_after_initial_sp_screening, g16_slurm_array_script, \
@@ -239,16 +239,16 @@ def main():
             xyz_str = opt_project_info['conformers'][fingerprint]['xyz_str_after_opt']
 
             fine_opt_input_file_basename = fine_opt_input_file_name.split('.')[0]
-            fine_opt_input_file = gen_gaussian_input_file(name=fine_opt_input_file_basename,
-                                                     xyz_str=xyz_str,
-                                                     charge=charge,
-                                                     multiplicity=multiplicity,
-                                                     memory_mb=300000,
-                                                     cpu_threads=40,
-                                                     is_ts=is_ts,
-                                                     level_of_theory=level_of_theory,
-                                                     comment=str(fingerprint),
-                                                     )
+            fine_opt_input_file = gen_gaussian_optfreq_input_file(name=fine_opt_input_file_basename,
+                                                                  xyz_str=xyz_str,
+                                                                  charge=charge,
+                                                                  multiplicity=multiplicity,
+                                                                  memory_mb=300000,
+                                                                  cpu_threads=40,
+                                                                  is_ts=is_ts,
+                                                                  level_of_theory=level_of_theory,
+                                                                  comment=str(fingerprint),
+                                                                  )
 
             opt_project_info['conformers'][fingerprint]['file_path']['input']['fine_opt_freq'] = fine_opt_input_file_path
 
