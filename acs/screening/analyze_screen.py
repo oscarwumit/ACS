@@ -223,6 +223,8 @@ def main():
     # 3. Save minima to optimization project dictionary
         for index in minimum_points:
             fingerprint = index_to_id[index]
+            if fingerprint in (collide + crash):
+                continue
             conformer_to_opt_hash_ids.append(fingerprint)
 
             conformer_from_screen = screen_result['conformers'][fingerprint]
