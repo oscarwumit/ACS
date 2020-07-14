@@ -5,8 +5,9 @@ This module analyzes cosmo-rs solvation free energy calculation results.
 import os
 import argparse
 
-from acs.common import read_yaml_file, write_yaml_file, read_cosmo_gsolv
+from acs.common import read_yaml_file, write_yaml_file, read_cosmo_gsolv, mkdir, gen_gaussian_irc_input_file
 from copy import deepcopy
+import shutil
 
 
 
@@ -40,6 +41,9 @@ def main():
     cosmo_project_info = read_yaml_file(cosmo_project_input_file)
     project_dir = cosmo_project_info['project_folder_path']
     cosmo_dir = os.path.join(project_dir, 'cosmo')
+    is_ts = cosmo_project_info['species']['is_ts']
+    is_cal_sol = cosmo_project_info['calc_solvation_sp_correction']
+    is_cal_fine = True if cosmo_project_info['level_of_theory']['fine_opt_freq'] else False
 
     # 1. Analyze cosmo result
     # 1.1. Parse Gsolv from cosmo tab file
@@ -58,7 +62,28 @@ def main():
         else:
             raise NotImplementedError
 
-    # 2. Save final project info (assume all calcs are done and all energies are parsed)
+    # 2. Final check
+    # 2.1 Copy all Gaussian log files of valid conformers to a folder for user to conveniently check the TS manually
+    # todo: flag low freq and move them to seperate folder
+    check_dir = os.path.join(project_dir, 'check')
+    mkdir(check_dir)
+    if is_ts:
+        check_neg_freq_dir = os.path.join(check_dir, 'check_neg_freq')
+        mkdir(check_neg_freq_dir)
+        neg_freq_warning_threshold = -800
+
+    for fingerprint in final_valid_conformer_hash_ids:
+        log_file_path = cosmo_project_info['conformers'][fingerprint]['file_path']['output']['fine_opt_freq']
+        filename = os.path.split(log_file_path)[-1]
+        check_file_path = os.path.join(check_dir, filename)
+        shutil.copyfile(src=log_file_path, dst=check_file_path)
+
+        if is_ts:
+            neg_freq = cosmo_project_info['conformers'][fingerprint]['negative_frequencies'][0]
+            if neg_freq > neg_freq_warning_threshold:
+            # e.g., neg_freq = -300 might be problematic for H abstraction
+                check_neg_freq_file_path = os.path.join(check_neg_freq_dir, filename)
+                shutil.copyfile(src=log_file_path, dst=check_neg_freq_file_path)
     final_project_info = deepcopy(cosmo_project_info)
     all_ids = tuple(final_project_info['conformers'].keys())
     for fingerprint in all_ids:
