@@ -7,6 +7,7 @@ import argparse
 
 from acs.common import read_yaml_file, write_yaml_file, read_cosmo_gsolv, mkdir, gen_gaussian_irc_input_file
 from copy import deepcopy
+from acs.exceptions import ParserError
 import shutil
 
 
@@ -47,10 +48,16 @@ def main():
 
     # 1. Analyze cosmo result
     # 1.1. Parse Gsolv from cosmo tab file
+    # todo: parse turbomole log file to check if single point calc terminate normally
     valid_conformer_hash_ids = cosmo_project_info['valid_conformer_hash_ids']
+    final_valid_conformer_hash_ids = list(valid_conformer_hash_ids)
     for fingerprint in valid_conformer_hash_ids:
         tab_file_path = cosmo_project_info['conformers'][fingerprint]['file_path']['output']['solv_correction']
-        g_solv = read_cosmo_gsolv(path=tab_file_path, use_hartree=True)
+        try:
+            g_solv = read_cosmo_gsolv(path=tab_file_path, use_hartree=True)
+        except (FileNotFoundError, ParserError):
+            final_valid_conformer_hash_ids.remove(fingerprint)
+            continue
         cosmo_project_info['conformers'][fingerprint]['energy']['solv_correction'] = g_solv
 
         sp_after_opt = cosmo_project_info['conformers'][fingerprint]['energy'].get('sp_after_opt', None)
@@ -61,6 +68,7 @@ def main():
                 sp_include_solv_correction
         else:
             raise NotImplementedError
+    cosmo_project_info['valid_conformer_hash_ids'] = tuple(final_valid_conformer_hash_ids)
 
     # 2. Final check
     # 2.1 Copy all Gaussian log files of valid conformers to a folder for user to conveniently check the TS manually
