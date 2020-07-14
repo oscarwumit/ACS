@@ -123,6 +123,37 @@ def gen_gaussian_optfreq_input_file(name: str,
 """
     return script
 
+def gen_gaussian_irc_input_file(name: str,
+                                    xyz_str: str,
+                                    charge: int,
+                                    multiplicity: int,
+                                    memory_mb: int,
+                                    cpu_threads: int,
+                                    is_forward: bool,
+                                    level_of_theory: str,
+                                    comment: str = '',
+                                    ) -> str:
+    if is_forward:
+        title_card = "#p irc=(calcfc,maxpoints=50,recalc=3,maxcycles=50, forward) scf=xqc iop(2/9=2000)"
+    else:
+        title_card = "#p irc=(calcfc,maxpoints=50,recalc=3,maxcycles=50, reverse) scf=xqc iop(2/9=2000)"
+
+    script = f"""%chk={name}.chk
+%mem={memory_mb}mb
+%NProcShared={cpu_threads}
+
+{title_card} {level_of_theory}
+
+{comment}
+
+{charge} {multiplicity}
+{xyz_str}
+
+
+
+"""
+    return script
+
 
 def read_cosmo_gsolv(path: str,
                      use_hartree: bool = True,
