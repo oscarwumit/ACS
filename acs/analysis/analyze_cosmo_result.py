@@ -92,6 +92,72 @@ def main():
             # e.g., neg_freq = -300 might be problematic for H abstraction
                 check_neg_freq_file_path = os.path.join(check_neg_freq_dir, filename)
                 shutil.copyfile(src=log_file_path, dst=check_neg_freq_file_path)
+
+    # 2.2 Prepare IRC input files for lowest energy conformer
+    # 2.2.1 Find lowest energy conformer
+    id_energy_list = list()
+    for fingerprint in final_valid_conformer_hash_ids:
+        if is_cal_sol:
+            energy = cosmo_project_info['conformers'][fingerprint]['energy']['sp_include_solv_correction']
+            id_energy_list.append((fingerprint, energy))
+        else:
+            energy = cosmo_project_info['conformers'][fingerprint]['energy']['sp_after_opt']
+            id_energy_list.append((fingerprint, energy))
+
+    low_id_energy = min(id_energy_list, key = lambda t: t[1])
+
+    # 2.2.2 Write IRC input file
+    irc_dir = os.path.join(project_dir, 'irc')
+    mkdir(irc_dir)
+
+    fingerprint = low_id_energy[0]
+
+    forward_irc_file_name = '0_' + str(fingerprint) + '_forward_irc.gjf'
+    reverse_irc_file_name = '1_' + str(fingerprint) + '_reverse_irc.gjf'
+
+    forward_irc_file_path = os.path.join(irc_dir, forward_irc_file_name)
+    reverse_irc_file_path = os.path.join(irc_dir, reverse_irc_file_name)
+
+    charge = cosmo_project_info['species']['charge']
+    multiplicity = cosmo_project_info['species']['multiplicity']
+    if is_cal_fine:
+        xyz_str = cosmo_project_info['conformers'][fingerprint]['xyz_str_after_fine_opt']
+        level_of_theory = cosmo_project_info['level_of_theory']['fine_opt_freq']
+    else:
+        xyz_str = cosmo_project_info['conformers'][fingerprint]['xyz_str_after_opt']
+        level_of_theory = cosmo_project_info['level_of_theory']['opt_freq']
+
+    forward_irc_file_basename = forward_irc_file_name.split('.')[0]
+    forward_irc_file = gen_gaussian_irc_input_file(name=forward_irc_file_basename,
+                                                          xyz_str=xyz_str,
+                                                          charge=charge,
+                                                          multiplicity=multiplicity,
+                                                          memory_mb=300000,
+                                                          cpu_threads=40,
+                                                          is_forward=True,
+                                                          level_of_theory=level_of_theory,
+                                                          comment=str(fingerprint),
+                                                          )
+
+    with open(forward_irc_file_path, 'w') as f:
+        f.write(forward_irc_file)
+
+    reverse_irc_file_basename = forward_irc_file_name.split('.')[0]
+    reverse_irc_file = gen_gaussian_irc_input_file(name=reverse_irc_file_basename,
+                                                          xyz_str=xyz_str,
+                                                          charge=charge,
+                                                          multiplicity=multiplicity,
+                                                          memory_mb=300000,
+                                                          cpu_threads=40,
+                                                          is_forward=False,
+                                                          level_of_theory=level_of_theory,
+                                                          comment=str(fingerprint),
+                                                          )
+
+    with open(reverse_irc_file_path, 'w') as f:
+        f.write(reverse_irc_file)
+
+    # 3. Save final project info (assume all calcs are done and all energies are parsed)
     final_project_info = deepcopy(cosmo_project_info)
     all_ids = tuple(final_project_info['conformers'].keys())
     for fingerprint in all_ids:
