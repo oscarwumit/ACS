@@ -22,7 +22,7 @@ def geom_and_calc_producer(bookkeep):
     reference = 'uhf' if multiplicity == 2 else 'rhf'  # assume only 1 or 2 here, need consider other cases
     initial_screening_sp_level_of_theory = bookkeep['level_of_theory'].get('initial_screening_sp', 'wb97x-d/def2-svp')
     method, basis = initial_screening_sp_level_of_theory.split('/')
-    memory = bookkeep['species'].get('memory', '8000MB')
+    memory = bookkeep.get('memory', '7000MB')
     num_thread = 1
 
     calc = set_up_psi4_calculator(charge=charge,
