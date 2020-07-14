@@ -13,7 +13,7 @@ import seaborn as sns
 from matplotlib.patches import Rectangle
 from copy import deepcopy
 
-from acs.common import read_yaml_file, write_yaml_file, mkdir, update_selected_keys, gen_gaussian_input_file
+from acs.common import read_yaml_file, write_yaml_file, mkdir, update_selected_keys, gen_gaussian_optfreq_input_file
 from acs.script import default_job_info_dict_after_initial_sp_screening, g16_slurm_array_script, \
     default_conformer_info_dict_after_initial_sp_screening
 
@@ -193,29 +193,32 @@ def main():
     # 1.1.4 For crashing conformers, set the energy (np.nan) via linear interpolation
         # todo: save dataframe, also deal with non-even sampling
         # todo: better treat different dimensions
-        label = [str(int(n * 360 / num_sampling)) for n in range(num_sampling)]
-        if n_rotors_to_couple == 2:
-            df = pd.DataFrame(energies, index=label, columns=label)
-        elif n_rotors_to_couple == 1:
-            df = pd.DataFrame(energies, index=label, columns=['0'])
+        if not n_rotors_to_couple == 0:
+            label = [str(int(n * 360 / num_sampling)) for n in range(num_sampling)]
+            if n_rotors_to_couple == 2:
+                df = pd.DataFrame(energies, index=label, columns=label)
+            elif n_rotors_to_couple == 1:
+                df = pd.DataFrame(energies, index=label, columns=['0'])
+            else:
+                raise NotImplementedError
+            df = df.interpolate(method='linear', axis=0, limit_direction='both').interpolate(method='linear', axis=1,
+                                                                                             limit_direction='both')
+            energies = df.to_numpy()
+
+        # 1.1.5 Rescale energies by minimum
+            # This will not change the result of search but make detailed view more clear
+            energies = energies - np.min(energies)
+
+        # 2. Search for minima in energy array
+            # todo: alternative method via function fitting and optimization
+        # 2.1 Greedy search for minima in array
+            # todo: better treat different dimensions, the output when fsize=1 should not be a tuple of two indices
+            minimum_points = search_minimum(energies, fsize=n_rotors_to_couple)
+        # 2.2 Set an energy ceiling
+            ceiling = 1.0  # 1 hartree = 627.509 kcal/mol, it seems high but the geom is not optimized
+            minimum_points = [i for i in minimum_points if energies[i] < ceiling]
         else:
-            raise NotImplementedError
-        df = df.interpolate(method='linear', axis=0, limit_direction='both').interpolate(method='linear', axis=1,
-                                                                                         limit_direction='both')
-        energies = df.to_numpy()
-
-    # 1.1.5 Rescale energies by minimum
-        # This will not change the result of search but make detailed view more clear
-        energies = energies - np.min(energies)
-
-    # 2. Search for minima in energy array
-        # todo: alternative method via function fitting and optimization
-    # 2.1 Greedy search for minima in array
-        # todo: better treat different dimensions, the output when fsize=1 should not be a tuple of two indices
-        minimum_points = search_minimum(energies, fsize=n_rotors_to_couple)
-    # 2.2 Set an energy ceiling
-        ceiling = 1.0  # 1 hartree = 627.509 kcal/mol, it seems high but the geom is not optimized
-        minimum_points = [i for i in minimum_points if energies[i] < ceiling]
+            minimum_points = list(index_to_id.keys())
 
     # 3. Save minima to optimization project dictionary
         for index in minimum_points:
@@ -257,16 +260,16 @@ def main():
         xyz_str = opt_project_info['conformers'][fingerprint]['xyz_str_before_opt']
 
         opt_input_file_basename = opt_input_file_name.split('.')[0]
-        opt_input_file = gen_gaussian_input_file(name=opt_input_file_basename ,
-                                                    xyz_str=xyz_str,
-                                                    charge=charge,
-                                                    multiplicity=multiplicity,
-                                                    memory_mb=300000,
-                                                    cpu_threads=40,
-                                                    is_ts=is_ts,
-                                                    level_of_theory=level_of_theory,
-                                                    comment=str(fingerprint),
-                                                    )
+        opt_input_file = gen_gaussian_optfreq_input_file(name=opt_input_file_basename,
+                                                         xyz_str=xyz_str,
+                                                         charge=charge,
+                                                         multiplicity=multiplicity,
+                                                         memory_mb=300000,
+                                                         cpu_threads=40,
+                                                         is_ts=is_ts,
+                                                         level_of_theory=level_of_theory,
+                                                         comment=str(fingerprint),
+                                                         )
 
         opt_project_info['conformers'][fingerprint]['file_path']['input']['opt_freq'] = opt_input_file_path
 
