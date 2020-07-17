@@ -308,7 +308,7 @@ def process_gaussian_opt_freq_output(logfile, is_ts=True, check_neg_freq=True):
     info = dict()
     info['freq'] = get_gaussian_freq(logfile, check_neg_freq=check_neg_freq, ts=is_ts)
     info['xyz_dict'] = get_gaussian_geometry(logfile)
-    info['electronic_energy'] = get_gaussian_energy(logfile)
+    info['electronic_energy'] = get_e_elect_from_log(logfile)
     info['unscaled_zpe'] = get_gaussian_unscaled_zpe(logfile)
 
     return info
@@ -470,7 +470,7 @@ def get_gaussian_unscaled_zpe(logfile):
     return energy_dict
 
 
-def get_gaussian_energy(logfile):
+def get_e_elect_from_log(logfile):
     energy_dict = dict()
     try:
         e_kj_mol = parse_e_elect(logfile)
