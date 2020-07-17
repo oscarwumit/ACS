@@ -14,9 +14,10 @@ from matplotlib.patches import Rectangle
 
 from acs.common import read_yaml_file, write_yaml_file, mkdir, update_selected_keys, gen_gaussian_optfreq_input_file, \
     process_gaussian_opt_freq_output, cluster_confs_by_rmsd_with_id, gen_gaussian_cosmo_sp_input_file, \
-    gen_cosmo_rs_input_file
+    gen_cosmo_rs_input_file, gen_orca_dlpno_sp_input_file
 from acs.script import default_job_info_dict_after_initial_sp_screening, g16_slurm_array_script, \
-    default_conformer_info_dict_after_initial_sp_screening, cosmo_slurm_array_script, turbomole_cosmo_slurm_array_script
+    default_conformer_info_dict_after_initial_sp_screening, cosmo_slurm_array_script, \
+    turbomole_cosmo_slurm_array_script, orca_slurm_array_script
 from acs.exceptions import ParserError
 from acs.converter.geom import xyz_dict_to_xyz_str
 from copy import deepcopy
@@ -273,7 +274,7 @@ def main():
         # todo: deal with non cbs-qb3 methods
         # todo: deal with other solvation correction methods
         level_of_theory = opt_project_info['level_of_theory']['fine_opt_freq']
-        if level_of_theory.lower() not in ['cbs-qb3']:
+        if level_of_theory.lower() not in ['cbs-qb3', 'wb97xd/def2svp']:
             raise NotImplementedError
         solvation_method = opt_project_info['level_of_theory']['solv_correction']
         if solvation_method not in ['cosmo']:
@@ -289,11 +290,54 @@ def main():
                 opt_project_info['conformers'][fingerprint]['energy']['sp_after_opt'] = \
                     opt_project_info['conformers'][fingerprint]['energy']['end_of_fine_opt']
         else:
-            raise NotImplementedError
+            # todo: deal with non orca sp jobs
+            if sp_level.lower() not in ['dlpno-ccsd(t)/def2-tzvp']:
+                raise NotImplementedError
+
+    # 2.c.1.1 generate orca dlpno sp input file
+            sp_dir = os.path.join(project_dir, 'sp')
+            mkdir(sp_dir)
+
+            for i, fingerprint in enumerate(valid_conformer_hash_ids):
+                # todo: deal with the case of no fine opt
+                xyz_str = opt_project_info['conformers'][fingerprint]['xyz_str_after_fine_opt']
+
+                orca_dlpno_input_file_name = str(i) + '_' + str(fingerprint) + '_orca.in'
+                orca_dlpno_input_file_path = os.path.join(sp_dir, orca_dlpno_input_file_name)
+                opt_project_info['conformers'][fingerprint]['file_path']['input'][
+                    'sp_after_opt'] = orca_dlpno_input_file_path
+
+                orca_dlpno_input_file = gen_orca_dlpno_sp_input_file(xyz_str=xyz_str,
+                                                                     charge=charge,
+                                                                     multiplicity=multiplicity,
+                                                                     memory_mb=7000,
+                                                                     cpu_threads=20,
+                                                                     )
+
+                orca_dlpno_output_file_name = str(i) + '_' + str(fingerprint) + '_orca.log'
+                orca_dlpno_output_file_path = os.path.join(sp_dir, orca_dlpno_output_file_name)
+                opt_project_info['conformers'][fingerprint]['file_path']['output'][
+                    'sp_after_opt'] = orca_dlpno_output_file_path
+
+                with open(orca_dlpno_input_file_path, 'w') as f:
+                    f.write(orca_dlpno_input_file)
+
+    # 2.c.1.2 Orca array job submission script
+            last_job_num = len(valid_conformer_hash_ids) - 1
+            sub_script = deepcopy(orca_slurm_array_script)
+            sub_script = sub_script.format(last_job_num=str(last_job_num))
+            sub_script_file_path = os.path.join(sp_dir, 'submit_orca_array.sh')
+            with open(sub_script_file_path, 'w') as f:
+                f.write(sub_script)
+
+    # 2.c.2.4 save sp project info
+            sp_project_info_path = os.path.join(sp_dir, 'sp_project_info.yml')
+            write_yaml_file(path=sp_project_info_path, content=opt_project_info)
 
     # 2.c.2 generate solvation input file
     # implemented for cosmo only
     # The following section uses turbomole to generate cosmo file
+    # 2.c.2.1 generate turbomole input files
         cosmo_dir = os.path.join(project_dir, 'cosmo')
         mkdir(cosmo_dir)
         xyz_dir = os.path.join(cosmo_dir, 'xyz')
