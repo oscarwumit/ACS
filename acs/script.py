@@ -296,3 +296,44 @@ rm -r $WorkDir
 
 
 """
+
+
+orca_slurm_array_script = """#!/bin/bash -l
+#SBATCH -p normal
+#SBATCH -J orca
+#SBATCH -N 1
+#SBATCH -n 20
+#SBATCH --time=5-0:00:00
+##SBATCH --exclusive 
+#SBATCH --array=0-{last_job_num}
+#SBATCH --mem-per-cpu=8000
+
+jnum=$SLURM_ARRAY_TASK_ID
+fin=$(echo ${{jnum}}_*.in)
+
+input=`basename $fin .in`
+echo "============================================================"
+echo "Job ID : $SLURM_JOB_ID"
+echo "Job Name : $SLURM_JOB_NAME"
+echo "Starting on : $(date)"
+echo "Running on node : $SLURMD_NODENAME"
+echo "Current directory : $(pwd)"
+echo "============================================================"
+
+SubmitDir=`pwd`
+
+#openmpi
+export PATH=/home/gridsan/groups/GRPAPI/Software/openmpi-3.1.4/bin:$PATH
+export LD_LIBRARY_PATH=/home/gridsan/groups/GRPAPI/Software/openmpi-3.1.4/lib:$LD_LIBRARY_PATH
+
+module load mpi
+
+#Orca
+orcadir=/home/gridsan/groups/GRPAPI/Software/orca_4_2_1_linux_x86-64_openmpi314
+export PATH=/home/gridsan/groups/GRPAPI/Software/orca_4_2_1_linux_x86-64_openmpi314:$PATH
+export LD_LIBRARY_PATH=/home/gridsan/groups/GRPAPI/Software/orca_4_2_1_linux_x86-64_openmpi314:$LD_LIBRARY_PATH
+echo "orcaversion"
+which orca
+
+$orcadir/orca $input.in > $input.log
+"""
