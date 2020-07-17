@@ -146,7 +146,11 @@ def main():
     for sub in sub_folder_info.keys():
         subfolder = str(sub)
         screen_result_file_path = os.path.join(screen_dir, subfolder, 'initial_conf_screening_result.yml')
-        screen_result = read_yaml_file(screen_result_file_path)
+        try:
+            screen_result = read_yaml_file(screen_result_file_path)
+        except FileNotFoundError:
+            continue
+
 
     # 1.1. Populate energy array for further analyses
     # 1.1.1 Pre-allocation based on num of torsions and sampling points
@@ -223,6 +227,8 @@ def main():
     # 3. Save minima to optimization project dictionary
         for index in minimum_points:
             fingerprint = index_to_id[index]
+            if fingerprint in (collide + crash):
+                continue
             conformer_to_opt_hash_ids.append(fingerprint)
 
             conformer_from_screen = screen_result['conformers'][fingerprint]
