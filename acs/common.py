@@ -253,6 +253,55 @@ henry  xh={{ 70 30 0 }}  tc=25.0 GSOLV # Automatic Henry Law coefficient Calcula
     """
     return script
 
+def gen_orca_dlpno_sp_input_file(xyz_str: str,
+                                charge: int,
+                                multiplicity: int,
+                                memory_mb: int,
+                                cpu_threads: int,
+                                comment: str = '',
+                                ) -> str:
+    """
+    # todo: consider other methods.
+    Generate ORCA DLPNO single point input file.
+    Args:
+        xyz_str:
+        charge:
+        multiplicity:
+        memory_mb:
+        cpu_threads:
+        comment:
+
+    Returns:
+
+    """
+
+    if multiplicity == 1:
+        reference = 'rHF'
+    elif multiplicity == 2:
+        reference = 'uHF'
+    else:
+        raise NotImplementedError
+
+    script = f"""!{reference} dlpno-ccsd(t) def2-tzvp def2-tzvp/c NormalPNO
+!NRSCF # using Newton Raphson SCF algorithm 
+!sp 
+
+%maxcore {memory_mb}
+%pal
+nprocs {cpu_threads}
+end
+%scf # recommended SCF settings 
+NRMaxIt 400
+NRStart 0.00005
+MaxIter 500
+end
+
+{comment}
+
+* xyz {charge} {multiplicity}
+{xyz_str}*"""
+    return script
+
 def process_gaussian_opt_freq_output(logfile, is_ts=True, check_neg_freq=True):
     if not check_gaussian_normal_termination(logfile):
         raise ParserError('Gaussian error termination.')
