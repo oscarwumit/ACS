@@ -804,14 +804,17 @@ def calc_rmsd_wrapper(xyz_1: dict,
     reorder_methods = (calrmsd.reorder_hungarian, calrmsd.reorder_inertia_hungarian)
 
     for rotation_method, reorder_method in product(rotation_methods, reorder_methods):
-        result_rmsd, q_swap, q_reflection, q_review = calrmsd.check_reflections(
-            p_atoms,
-            q_atoms,
-            p_coord,
-            q_coord,
-            reorder_method=reorder_method,
-            rotation_method=rotation_method,
-            keep_stereo=True)
+        try:
+            result_rmsd, q_swap, q_reflection, q_review = calrmsd.check_reflections(
+                p_atoms,
+                q_atoms,
+                p_coord,
+                q_coord,
+                reorder_method=reorder_method,
+                rotation_method=rotation_method,
+                keep_stereo=True)
+        except ValueError:
+            continue
         rmsds.append(float(result_rmsd))
 
     rmsd = min(rmsds)
