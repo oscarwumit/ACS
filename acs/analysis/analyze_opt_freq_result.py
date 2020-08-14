@@ -102,6 +102,8 @@ def main():
                 normal_termination_conformer_hash_ids.append(fingerprint)
             except ParserError:
                 crashing_conformer_hash_ids.append(fingerprint)
+            except TypeError:
+                crashing_conformer_hash_ids.append(fingerprint)
 
     # 1.1.2 check if crash
         for fingerprint in opted_conf_fingerprints:
