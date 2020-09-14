@@ -505,7 +505,7 @@ def parse_e_elect(path: str,
         raise InputError(f'Could not find file {path}')
     log = ess_factory(fullpath=path)
     try:
-        e_elect = log.load_energy(zpe_scale_factor) * 0.001  # convert to kJ/mol
+        e_elect = log.load_energy(zpe_scale_factor=zpe_scale_factor, remove_empirical=True) * 0.001  # convert to kJ/mol
     except (LogError, NotImplementedError):
         e_elect = None
     return e_elect
