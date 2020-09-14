@@ -341,9 +341,9 @@ def main():
     # The following section uses turbomole to generate cosmo file
     # 2.c.2.1 generate turbomole input files
         cosmo_dir = os.path.join(project_dir, 'cosmo')
-        mkdir(cosmo_dir)
+        # mkdir(cosmo_dir)
         xyz_dir = os.path.join(cosmo_dir, 'xyz')
-        mkdir(xyz_dir)
+        # mkdir(xyz_dir)
 
         for i, fingerprint in enumerate(valid_conformer_hash_ids):
             cosmo_input_file_name = str(i) + '_' + str(fingerprint) + '_cosmo.txt'
