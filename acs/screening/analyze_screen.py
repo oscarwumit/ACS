@@ -13,8 +13,8 @@ import seaborn as sns
 from matplotlib.patches import Rectangle
 from copy import deepcopy
 
-from acs.common import read_yaml_file, write_yaml_file, mkdir, update_selected_keys, gen_gaussian_optfreq_input_file
-from acs.script import default_job_info_dict_after_initial_sp_screening, g16_slurm_array_script, \
+from acs.common import read_yaml_file, write_yaml_file, mkdir, update_selected_keys, gen_qchem_optfreq_input_file
+from acs.script import default_job_info_dict_after_initial_sp_screening, qchem53_slurm_array_script, \
     default_conformer_info_dict_after_initial_sp_screening
 
 
@@ -260,22 +260,22 @@ def main():
             level_of_theory = 'u' + level_of_theory
 
     for i, fingerprint in enumerate(opt_project_info['conformer_to_opt_hash_ids']):
-        opt_input_file_name = str(i) + '_' + str(fingerprint) + '_geom_opt_freq.gjf'
+        opt_input_file_name = str(i) + '_' + str(fingerprint) + '_geom_opt_freq.qcin'
         opt_input_file_path = os.path.join(opt_dir, opt_input_file_name)
 
         xyz_str = opt_project_info['conformers'][fingerprint]['xyz_str_before_opt']
 
         opt_input_file_basename = opt_input_file_name.split('.')[0]
-        opt_input_file = gen_gaussian_optfreq_input_file(name=opt_input_file_basename,
-                                                         xyz_str=xyz_str,
-                                                         charge=charge,
-                                                         multiplicity=multiplicity,
-                                                         memory_mb=300000,
-                                                         cpu_threads=40,
-                                                         is_ts=is_ts,
-                                                         level_of_theory=level_of_theory,
-                                                         comment=str(fingerprint),
-                                                         )
+        opt_input_file = gen_qchem_optfreq_input_file(name=opt_input_file_basename,
+                                                      xyz_str=xyz_str,
+                                                      charge=charge,
+                                                      multiplicity=multiplicity,
+                                                      memory_mb=300000,
+                                                      cpu_threads=40,
+                                                      is_ts=is_ts,
+                                                      level_of_theory=level_of_theory,
+                                                      comment=str(fingerprint),
+                                                      )
 
         opt_project_info['conformers'][fingerprint]['file_path']['input']['opt_freq'] = opt_input_file_path
 
@@ -286,9 +286,9 @@ def main():
     # todo: make submission script more general
     name = opt_project_info['species']['name']
     last_job_num = len(opt_project_info['conformer_to_opt_hash_ids']) - 1
-    sub_script = deepcopy(g16_slurm_array_script)
+    sub_script = deepcopy(qchem53_slurm_array_script)
     sub_script = sub_script.format(last_job_num=str(last_job_num), name=name)
-    sub_script_file_path = os.path.join(opt_dir, 'submit_g16_array.sh')
+    sub_script_file_path = os.path.join(opt_dir, 'submit_qchem53_array.sh')
     with open(sub_script_file_path, 'w') as f:
         f.write(sub_script)
 
