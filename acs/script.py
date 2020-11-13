@@ -229,6 +229,45 @@ rm -rf $GAUSS_SCRDIR
 """
 
 
+qchem53_slurm_array_script = """#!/bin/bash -l
+#SBATCH -p normal
+#SBATCH -J opt{name}
+#SBATCH -N 1
+#SBATCH -n 8
+#SBATCH --time=5-0:00:00
+#SBATCH --mem-per-cpu=9000
+#SBATCH --array=0-{last_job_num}
+
+# export qchem environment variables
+source /home/gridsan/groups/RMG/Software/qchem/qcenv.sh
+
+jnum=$SLURM_ARRAY_TASK_ID
+fin=$(echo ${{jnum}}_*.qcin)
+#fout="${{fin%.*}}".out
+
+input=`basename $fin .qcin`
+echo "============================================================"
+echo "Job ID : $SLURM_JOB_ID"
+echo "Job Name : $SLURM_JOB_NAME"
+echo "task ID: $SLURM_ARRAY_TASK_ID"
+echo "Starting on : $(date)"
+echo "Running on node : $SLURMD_NODENAME"
+echo "Current directory : $(pwd)"
+echo "============================================================"
+
+export QCHEM_SCRDIR=/home/gridsan/kspieker/scratch/$SLURM_JOB_NAME-$SLURM_JOB_ID
+
+echo "QCHEM_SCRDIR : $QCHEM_SCRDIR"
+mkdir -p $QCHEM_SCRDIR
+chmod 750 $QCHEM_SCRDIR
+
+qchem -nt 8 $input.qcin > $input.log
+
+
+
+"""
+
+
 cosmo_slurm_array_script = """#!/bin/bash -l
 #SBATCH -p normal
 #SBATCH -J cosmo
