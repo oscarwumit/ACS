@@ -155,6 +155,65 @@ def gen_gaussian_irc_input_file(name: str,
     return script
 
 
+def gen_qchem_optfreq_input_file(name: str,
+                                 xyz_str: str,
+                                 charge: int,
+                                 multiplicity: int,
+                                 memory_mb: int,
+                                 cpu_threads: int,
+                                 is_ts: bool,
+                                 level_of_theory: str,
+                                 comment: str = '',
+                                 ) -> str:
+    # todo: add TS syntax for qchem
+    # if is_ts:
+    #     title_card = "#p opt=(calcall,ts,noeigentest,maxcycles=120) freq guess=mix scf=xqc iop(2/9=2000)"
+    # else:
+    #     title_card = "#p opt=(calcall,noeigentest,maxcycles=120) freq guess=mix scf=xqc iop(2/9=2000)"
+
+    script = f"""
+$molecule
+{charge} {multiplicity}
+{xyz_str}
+$end
+
+$rem
+   JOBTYPE                   Opt
+   METHOD                    {level_of_theory.split('/')[0]}
+   BASIS                     {level_of_theory.split('/')[1]}
+   SCF_ALGORITHM             DIIS_GDM
+   MAX_DIIS_CYCLES           50
+   THRESH_DIIS_SWITCH        11
+   MAX_SCF_CYCLES            150
+   SCF_CONVERGENCE           8
+   THRESH                    11
+   MEM_TOTAL                 {memory_mb}
+$end
+
+@@@
+
+$molecule
+   read
+$end
+
+$rem
+   JOBTYPE                   FREQ
+   METHOD                    {level_of_theory.split('/')[0]}
+   BASIS                     {level_of_theory.split('/')[1]}
+   SCF_ALGORITHM             DIIS_GDM
+   MAX_DIIS_CYCLES           50
+   THRESH_DIIS_SWITCH        11
+   MAX_SCF_CYCLES            150
+   SCF_CONVERGENCE           8
+   THRESH                    11
+   MEM_TOTAL                 {memory_mb}
+$end
+
+
+"""
+    return script
+
+
 def read_cosmo_gsolv(path: str,
                      use_hartree: bool = True,
                      ) -> float:
@@ -302,20 +361,24 @@ end
 {xyz_str}*"""
     return script
 
-def process_gaussian_opt_freq_output(logfile, is_ts=True, check_neg_freq=True):
-    if not check_gaussian_normal_termination(logfile):
-        raise ParserError('Gaussian error termination.')
+def process_opt_freq_output(logfile, ess_software, is_ts=True, check_neg_freq=True):
+    if ess_software == 'gaussian':
+        if not check_gaussian_normal_termination(logfile):
+            raise ParserError('Gaussian error termination.')
+    elif ess_software == 'qchem':
+        if not check_qchem_normal_termination(logfile):
+            raise ParserError('QChem error termination.')
     info = dict()
-    info['freq'] = get_gaussian_freq(logfile, check_neg_freq=check_neg_freq, ts=is_ts)
-    info['xyz_dict'] = get_gaussian_geometry(logfile)
+    info['freq'] = get_freq(logfile, ess_software, check_neg_freq=check_neg_freq, ts=is_ts)
+    info['xyz_dict'] = get_geometry(logfile)
     info['electronic_energy'] = get_e_elect_from_log(logfile)
-    info['unscaled_zpe'] = get_gaussian_unscaled_zpe(logfile)
+    info['unscaled_zpe'] = get_unscaled_zpe(logfile)
 
     return info
 
 
-def get_gaussian_freq(logfile, check_neg_freq=True, min_neg_freq=-2400, max_neg_freq=-200, ts=True):
-    freq = parse_frequencies(logfile, software='gaussian')
+def get_freq(logfile, ess_software, check_neg_freq=True, min_neg_freq=-2400, max_neg_freq=-200, ts=True):
+    freq = parse_frequencies(logfile, software=ess_software)
     neg_freq = tuple([float(x) for x in freq if x < 0])
     if check_neg_freq:
         if ts:
@@ -432,6 +495,18 @@ def check_gaussian_normal_termination(logfile):
         return True
 
 
+def check_qchem_normal_termination(logfile):
+    with open(logfile, 'r') as f:
+        lines = f.readlines()
+        forward_lines = tuple(lines)
+    for line in forward_lines:
+        # todo: how does qchem error?
+        if 'Error termination' in line:
+            return False
+    else:
+        return True
+
+
 def parse_zpe(path: str) -> Optional[float]:
     """
     Determine the calculated ZPE from a frequency output file
@@ -452,12 +527,12 @@ def parse_zpe(path: str) -> Optional[float]:
     return zpe
 
 
-def get_gaussian_unscaled_zpe(logfile):
+def get_unscaled_zpe(logfile):
     energy_dict = dict()
     try:
         zpe_kj_mol = parse_zpe(logfile)
     except:
-        raise ParserError('Cannot parse energy from gaussian log file.')
+        raise ParserError('Cannot parse energy from log file.')
 
     zpe_j_mol = zpe_kj_mol * 1000
     zpe_kcal_mol = zpe_j_mol / 4184
@@ -475,7 +550,7 @@ def get_e_elect_from_log(logfile):
     try:
         e_kj_mol = parse_e_elect(logfile)
     except:
-        raise ParserError('Cannot parse energy from gaussian log file.')
+        raise ParserError('Cannot parse energy from the log file.')
 
     e_j_mol = e_kj_mol * 1000
     e_kcal_mol = e_j_mol / 4184
@@ -511,7 +586,7 @@ def parse_e_elect(path: str,
     return e_elect
 
 
-def get_gaussian_geometry(logfile):
+def get_geometry(logfile):
     xyz = parse_geometry(logfile)
     return xyz
 
