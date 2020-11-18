@@ -12,10 +12,10 @@ import numpy as np
 import seaborn as sns
 from matplotlib.patches import Rectangle
 
-from acs.common import read_yaml_file, write_yaml_file, mkdir, update_selected_keys, gen_gaussian_optfreq_input_file, \
-    process_gaussian_opt_freq_output, cluster_confs_by_rmsd_with_id, gen_gaussian_cosmo_sp_input_file, \
+from acs.common import read_yaml_file, write_yaml_file, mkdir, update_selected_keys, gen_qchem_optfreq_input_file, \
+    process_opt_freq_output, cluster_confs_by_rmsd_with_id, gen_gaussian_cosmo_sp_input_file, \
     gen_cosmo_rs_input_file, gen_orca_dlpno_sp_input_file
-from acs.script import default_job_info_dict_after_initial_sp_screening, g16_slurm_array_script, \
+from acs.script import default_job_info_dict_after_initial_sp_screening, qchem53_slurm_array_script, \
     default_conformer_info_dict_after_initial_sp_screening, cosmo_slurm_array_script, \
     turbomole_cosmo_slurm_array_script, orca_slurm_array_script
 from acs.exceptions import ParserError
@@ -23,6 +23,7 @@ from acs.converter.geom import xyz_dict_to_xyz_str
 from copy import deepcopy
 
 
+ESS_SOFTWARE = 'qchem'
 
 def parse_command_line_arguments(command_line_args=None):
     """
@@ -98,7 +99,7 @@ def main():
             opt_project_info['conformers'][fingerprint]['file_path']['output']['opt_freq'] = opt_output_file_path
             try:
                 fingerprint_to_all_opt_log_info_dict[fingerprint] = \
-                    process_gaussian_opt_freq_output(logfile=opt_output_file_path, is_ts=is_ts)
+                    process_opt_freq_output(logfile=opt_output_file_path, ess_software=ESS_SOFTWARE, is_ts=is_ts)
                 normal_termination_conformer_hash_ids.append(fingerprint)
             except ParserError:
                 crashing_conformer_hash_ids.append(fingerprint)
@@ -165,7 +166,7 @@ def main():
             opt_project_info['conformers'][fingerprint]['file_path']['output']['fine_opt_freq'] = opt_output_file_path
             try:
                 fingerprint_to_all_opt_log_info_dict[fingerprint] = \
-                    process_gaussian_opt_freq_output(logfile=opt_output_file_path, is_ts=is_ts)
+                    process_opt_freq_output(logfile=opt_output_file_path, ess_software=ESS_SOFTWARE, is_ts=is_ts)
                 normal_termination_conformer_hash_ids.append(fingerprint)
             except ParserError:
                 crashing_conformer_hash_ids.append(fingerprint)
@@ -236,13 +237,13 @@ def main():
                 level_of_theory = 'u' + level_of_theory
 
         for i, fingerprint in enumerate(opt_project_info['conformer_to_fine_opt_hash_ids']):
-            fine_opt_input_file_name = str(i) + '_' + str(fingerprint) + '_geom_fine_opt_freq.gjf'
+            fine_opt_input_file_name = str(i) + '_' + str(fingerprint) + '_geom_fine_opt_freq.qcin'
             fine_opt_input_file_path = os.path.join(opt_fine_dir, fine_opt_input_file_name)
 
             xyz_str = opt_project_info['conformers'][fingerprint]['xyz_str_after_opt']
 
             fine_opt_input_file_basename = fine_opt_input_file_name.split('.')[0]
-            fine_opt_input_file = gen_gaussian_optfreq_input_file(name=fine_opt_input_file_basename,
+            fine_opt_input_file = gen_qchem_optfreq_input_file(name=fine_opt_input_file_basename,
                                                                   xyz_str=xyz_str,
                                                                   charge=charge,
                                                                   multiplicity=multiplicity,
@@ -261,9 +262,9 @@ def main():
     # 2.b.2 Array job submission script
         name = opt_project_info['species']['name']
         last_job_num = len(opt_project_info['conformer_to_fine_opt_hash_ids']) - 1
-        sub_script = deepcopy(g16_slurm_array_script)
+        sub_script = deepcopy(qchem53_slurm_array_script)
         sub_script = sub_script.format(last_job_num=str(last_job_num), name=name)
-        sub_script_file_path = os.path.join(opt_fine_dir, 'submit_g16_array.sh')
+        sub_script_file_path = os.path.join(opt_fine_dir, 'submit_qchem53_array.sh')
         with open(sub_script_file_path, 'w') as f:
             f.write(sub_script)
 
@@ -276,11 +277,12 @@ def main():
         # todo: deal with non cbs-qb3 methods
         # todo: deal with other solvation correction methods
         level_of_theory = opt_project_info['level_of_theory']['fine_opt_freq']
-        if level_of_theory.lower() not in ['cbs-qb3', 'wb97xd/def2svp']:
+        if level_of_theory.lower() not in ['cbs-qb3', 'wb97xd/def2svp', 'wb97m-v/def2-tzvp']:
             raise NotImplementedError
-        solvation_method = opt_project_info['level_of_theory']['solv_correction']
-        if solvation_method not in ['cosmo']:
-            raise NotImplementedError
+        # todo: don't need solvation so comment this out...
+        # solvation_method = opt_project_info['level_of_theory']['solv_correction']
+        # if solvation_method not in ['cosmo']:
+        #     raise NotImplementedError
 
         valid_conformer_hash_ids = opt_project_info['valid_conformer_hash_ids']
 
