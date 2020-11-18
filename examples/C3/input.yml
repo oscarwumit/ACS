@@ -1,0 +1,42 @@
+calc_solvation_sp_correction: false
+is_initial_sp_screening: true
+level_of_theory:
+  fine_opt_freq: wB97m-v/def2-tzvp
+  initial_screening_sp: wb97x-d/def2-svp
+  opt_freq: B3LYP/6-31G*
+  solv_correction: null
+  solv_sp_gas: null
+  solv_sp_liq: null
+  sp_after_opt: dlpno-ccsd(t)/def2-tzvp
+n_point_each_torsion: 5
+n_rotors_to_couple: 2
+project: C3_test
+species:
+  charge: 0
+  coord:
+    xyz_str: 'C         -9.67822        4.34511        0.00705
+
+      C         -8.23680        4.84182        0.06423
+
+      H         -9.88151        3.65199        0.85110
+
+      H         -9.86704        3.81763       -0.95226
+
+      H        -10.37245        5.20856        0.08078
+
+      C         -7.24764        3.68443       -0.03413
+
+      H         -8.07385        5.38162        1.02194
+
+      H         -8.05942        5.54680       -0.77641
+
+      H         -7.39658        2.97655        0.80900
+
+      H         -6.20997        4.07711        0.01025
+
+      H         -7.38212        3.14217       -0.99436
+
+      '
+  is_ts: false
+  multiplicity: 1
+  name: C3_test
