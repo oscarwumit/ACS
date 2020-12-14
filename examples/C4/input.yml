@@ -1,0 +1,52 @@
+calc_solvation_sp_correction: false
+is_initial_sp_screening: true
+level_of_theory:
+  fine_opt_freq: wB97m-v/def2-tzvp
+  initial_screening_sp: wb97x-d/def2-svp
+  opt_freq: B3LYP/6-31G*
+  solv_correction: null
+  solv_sp_gas: null
+  solv_sp_liq: null
+  sp_after_opt: dlpno-ccsd(t)/def2-tzvp
+n_point_each_torsion: 10
+n_rotors_to_couple: 2
+project: C4_test
+species:
+  charge: 0
+  coord:
+    xyz_str: 'C         -5.94031        2.71819       -0.00864
+
+      C         -4.68921        3.59109        0.02731
+
+      H         -5.96065        2.11055       -0.93841
+
+      H         -6.84447        3.36232        0.01486
+
+      H         -5.96364        2.04031        0.87115
+
+      C         -3.41690        2.73654       -0.00376
+
+      H         -4.70569        4.20331        0.95538
+
+      H         -4.70270        4.27341       -0.85056
+
+      C         -2.16291        3.61756        0.03253
+
+      H         -3.40857        2.12427       -0.93264
+
+      H         -3.41156        2.05410        0.87489
+
+      C         -0.89365        2.77106        0.00176
+
+      H         -2.16309        4.22995        0.96063
+
+      H         -2.16010        4.30006       -0.84530
+
+      H         -0.85976        2.09378        0.88167
+
+      H         -0.00329        3.43400        0.02898
+
+      H         -0.85676        2.16404       -0.92789'
+  is_ts: false
+  multiplicity: 1
+  name: C4_test
