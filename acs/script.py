@@ -362,15 +362,15 @@ echo "============================================================"
 SubmitDir=`pwd`
 
 #openmpi
-export PATH=/home/gridsan/groups/GRPAPI/Software/openmpi-3.1.4/bin:$PATH
-export LD_LIBRARY_PATH=/home/gridsan/groups/GRPAPI/Software/openmpi-3.1.4/lib:$LD_LIBRARY_PATH
+export PATH=/home/gridsan/groups/RMG/Software/openmpi-3.1.4/bin:$PATH
+export LD_LIBRARY_PATH=/home/gridsan/groups/RMG/Software/openmpi-3.1.4/lib:$LD_LIBRARY_PATH
 
 module load mpi
 
 #Orca
-orcadir=/home/gridsan/groups/GRPAPI/Software/orca_4_2_1_linux_x86-64_openmpi314
-export PATH=/home/gridsan/groups/GRPAPI/Software/orca_4_2_1_linux_x86-64_openmpi314:$PATH
-export LD_LIBRARY_PATH=/home/gridsan/groups/GRPAPI/Software/orca_4_2_1_linux_x86-64_openmpi314:$LD_LIBRARY_PATH
+orcadir=/home/gridsan/groups/RMG/Software/orca_4_2_1_linux_x86-64_openmpi314
+export PATH=/home/gridsan/groups/RMG/Software/orca_4_2_1_linux_x86-64_openmpi314:$PATH
+export LD_LIBRARY_PATH=/home/gridsan/groups/RMG/Software/orca_4_2_1_linux_x86-64_openmpi314:$LD_LIBRARY_PATH
 echo "orcaversion"
 which orca
 
