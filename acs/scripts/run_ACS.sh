@@ -5,6 +5,8 @@ ACS_PATH="/home/gridsan/kspieker/ENI/ACS/"
 
 ##############################################
 
+create_generic_submit_script="${ACS_PATH}acs/scripts/create_generic_submit_script.py"
+
 step1="${ACS_PATH}acs/screening/gen_conf.py"
 
 step2="${ACS_PATH}acs/scripts/suball_conf_screen.sh"
@@ -26,11 +28,13 @@ step9="${ACS_PATH}acs/analysis/analyze_sp_result.py"
 step10="${ACS_PATH}acs/analysis/calc_mstst_rate.py"
 
 
+source activate arc_env
+
 # step 1: generate conformers
 echo "Step 1: Generating conformers..."
-source activate arc_env
 START_TIME=$SECONDS
-python $step1 input.yml
+python $create_generic_submit_script --step 1
+sbatch -W gen_conf.sh
 ELAPSED_TIME=$(($SECONDS - $START_TIME))
 echo "Completed step 1 in $ELAPSED_TIME seconds" $'\n'
 
@@ -49,7 +53,8 @@ echo "Completed step 2 in $ELAPSED_TIME seconds" $'\n'
 echo "Step 3: Analyzing Psi4 single point screening"
 cd 0
 START_TIME=$SECONDS
-python $step3 initial_conf_screening_result.yml
+python $create_generic_submit_script --step 3
+sbatch -W analyze_screen.sh
 ELAPSED_TIME=$(($SECONDS - $START_TIME))
 echo "Completed step 3 in $ELAPSED_TIME seconds" $'\n'
 
@@ -66,7 +71,8 @@ echo "Completed step 4 in $ELAPSED_TIME seconds" $'\n'
 # step 5: analyze geometry optimizations and frequency calculations
 echo "Step 5: Analyzing results from QM job..."
 START_TIME=$SECONDS
-python $step5 opt_project_info.yml
+python $create_generic_submit_script --step 5
+sbatch -W opt_project_info.sh
 ELAPSED_TIME=$(($SECONDS - $START_TIME))
 echo "Completed step 5 in $ELAPSED_TIME seconds" $'\n'
 
@@ -79,10 +85,12 @@ sbatch -W $step6
 ELAPSED_TIME=$(($SECONDS - $START_TIME))
 echo "Completed step 6 in $ELAPSED_TIME seconds" $'\n'
 
+
 # step 7: analzye the fine optimization
 echo "Step 7: Analyzing results from fine QM job..."
 START_TIME=$SECONDS
-python $step7 fine_opt_project_info.yml
+python $create_generic_submit_script --step 7
+sbatch -W fine_opt_project_info.sh
 ELAPSED_TIME=$(($SECONDS - $START_TIME))
 echo "Completed step 7 in $ELAPSED_TIME seconds" $'\n'
 
@@ -99,7 +107,8 @@ echo "Completed step 8 in $ELAPSED_TIME seconds" $'\n'
 # step 9: analyze the single point calculations
 echo "Step 9: Analyzing single point job..."
 START_TIME=$SECONDS
-python $step9 sp_project_info.yml
+python $create_generic_submit_script --step 9
+sbatch -W sp_project_info.sh
 ELAPSED_TIME=$(($SECONDS - $START_TIME))
 echo "Completed step 9 in $ELAPSED_TIME seconds" $'\n'
 

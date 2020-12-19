@@ -32,6 +32,10 @@ import qcelemental as qcel
 from acs.converter.geom import xyz_dict_to_xyz_file
 
 
+# absolute path to the ACS folder
+ACS_PATH = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+
+
 def read_yaml_file(path: str,
                    ) -> dict:
     """

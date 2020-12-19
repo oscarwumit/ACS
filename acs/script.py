@@ -376,3 +376,38 @@ which orca
 
 $orcadir/orca $input.in > $input.log
 """
+
+# used to generate conformers and analzye results
+generic_submit_script = """#!/bin/bash -l
+#SBATCH -p normal
+#SBATCH -J {job_name}
+#SBATCH -o {stdout}.%N.%j.out
+#SBATCH -e {stderr}.%N.%j.err
+#SBATCH -N 1
+#SBATCH -n 4
+#SBATCH --time=00-02:00:00 
+#SBATCH --mem-per-cpu=2000
+
+START_TIME=$SECONDS
+
+# Run job
+echo "============================================================"
+echo "Job ID : $SLURM_JOB_ID"
+echo "Job Name : $SLURM_JOB_NAME"
+echo "Starting on : $(date)"
+echo "Running on node : $SLURMD_NODENAME"
+echo "Current directory : $(pwd)"
+echo "============================================================"
+
+# Activate Python environment and run program
+source activate arc_env
+
+python {script} {input}
+
+ELAPSED_TIME=$(($SECONDS - $START_TIME))
+echo "Elapsed time (s):" 
+echo $ELAPSED_TIME
+
+source deactivate
+
+"""
