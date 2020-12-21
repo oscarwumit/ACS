@@ -411,3 +411,40 @@ echo $ELAPSED_TIME
 source deactivate
 
 """
+
+psi4_slurm_array_script="""#!/bin/bash -l
+#SBATCH -p normal
+#SBATCH -J psi4
+#SBATCH -N 1
+#SBATCH --exclusive
+####SBATCH -n 20
+####SBATCH --mem-per-cpu=9000
+#SBATCH --time=00-06:00:00
+#SBATCH --array=0-{last_job_num}
+
+ARCPATH=/home/gridsan/kspieker/RMG/ARC
+RMGPATH=/home/gridsan/kspieker/RMG/RMG-Py
+ACSPATH=/home/gridsan/kspieker/ENI/ACS
+export PYTHONPATH=$PYTHONPATH:$RMGPATH
+export PYTHONPATH=$PYTHONPATH:$ARCPATH
+export PYTHONPATH=$PYTHONPATH:$ACSPATH
+export PSI_SCRATCH=/home/gridsan/kspieker/scratch/psi4
+
+FILE=$(echo $SLURM_ARRAY_TASK_ID/*.yml)
+
+echo "============================================================"
+echo "Job ID : $SLURM_JOB_ID"
+echo "Job Name : $SLURM_JOB_NAME"
+echo "task ID: $SLURM_ARRAY_TASK_ID"
+echo "Starting on : $(date)"
+echo "Running on node : $SLURMD_NODENAME"
+echo "Current directory : $(pwd)"
+echo "============================================================"
+
+source activate arc_env
+
+python /home/gridsan/kspieker/ENI/ACS/acs/screening/run_screening.py $FILE
+
+source deactivate
+
+"""

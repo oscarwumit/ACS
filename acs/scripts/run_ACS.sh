@@ -9,7 +9,7 @@ create_generic_submit_script="${ACS_PATH}acs/scripts/create_generic_submit_scrip
 
 step1="${ACS_PATH}acs/screening/gen_conf.py"
 
-step2="${ACS_PATH}acs/scripts/suball_conf_screen.sh"
+step2="submit_psi4_array.sh"
 
 step3="${ACS_PATH}acs/screening/analyze_screen.py"
 
@@ -43,7 +43,8 @@ echo "Completed step 1 in $ELAPSED_TIME seconds" $'\n'
 echo "Step 2: Running single point calculations with Psi4..."
 cd initial_sp_screening
 START_TIME=$SECONDS
-bash $step2 */*.yml
+python $create_generic_submit_script --step 2
+sbatch -W $step2
 ELAPSED_TIME=$(($SECONDS - $START_TIME))
 echo "Completed step 2 in $ELAPSED_TIME seconds" $'\n'
 

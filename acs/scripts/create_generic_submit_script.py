@@ -3,7 +3,7 @@ from copy import deepcopy
 import os
 
 from acs.common import ACS_PATH
-from acs.script import generic_submit_script
+from acs.script import generic_submit_script, psi4_slurm_array_script
 
 
 def parse_command_line_arguments(command_line_args=None):
@@ -29,6 +29,8 @@ def main():
 				'input': 'input.yml',
 				'sub_script_name': 'gen_conf.sh'
 				},
+			2: {'sub_script_name': 'submit_psi4_array.sh',
+			    },
 			3: {'job_name': 'analyze_screen',
 				'script': os.path.join(ACS_PATH, 'acs', 'screening', 'analyze_screen.py'),
 				'input': 'initial_conf_screening_result.yml',
@@ -52,12 +54,17 @@ def main():
 			}
 	args = parse_command_line_arguments()
 
-	sub_script = generic_submit_script.format(job_name=dic[args.step]['job_name'],
-								   			  stdout=dic[args.step]['job_name'],
-								   			  stderr=dic[args.step]['job_name'],
-								   			  script=dic[args.step]['script'],
-								   			  input=dic[args.step]['input']
-								   			   )
+	if args.step == 2:
+		path, dirs, files = next(os.walk(os.getcwd()))
+
+		sub_script = psi4_slurm_array_script.format(last_job_num=len(dirs)-1)
+	else:
+		sub_script = generic_submit_script.format(job_name=dic[args.step]['job_name'],
+									   			  stdout=dic[args.step]['job_name'],
+									   			  stderr=dic[args.step]['job_name'],
+									   			  script=dic[args.step]['script'],
+									   			  input=dic[args.step]['input']
+									   			  )
 
 	# write the script to the current directory of run_ACS.sh
 	with open(dic[args.step]['sub_script_name'], 'w') as f:
