@@ -225,7 +225,6 @@ g16 < $input.gjf > $input.log
 rm -rf $GAUSS_SCRDIR
 
 
-
 """
 
 
@@ -255,15 +254,26 @@ echo "Running on node : $SLURMD_NODENAME"
 echo "Current directory : $(pwd)"
 echo "============================================================"
 
-export QCHEM_SCRDIR=/home/gridsan/kspieker/scratch/$SLURM_JOB_NAME-$SLURM_JOB_ID
+SubmitDir=`pwd`
+echo $Submit
 
-echo "QCHEM_SCRDIR : $QCHEM_SCRDIR"
-mkdir -p $QCHEM_SCRDIR
-chmod 750 $QCHEM_SCRDIR
+export QCSCRATCH=/home/gridsan/kspieker/scratch/$SLURM_JOB_NAME-$SLURM_JOB_ID
+
+echo "QCSCRATCH : $QCSCRATCH"
+mkdir -p $QCSCRATCH
+chmod 750 $QCSCRATCH
+
+cd $QCSCRATCH
+
+cp "$SubmitDir/$input.qcin" .
 
 qchem -nt 8 $input.qcin > $input.log
 
+cp $input.log "$SubmitDir/"
 
+cd $SubmitDir
+
+rm -rf $QCSCRATCH
 
 """
 
@@ -408,23 +418,21 @@ ELAPSED_TIME=$(($SECONDS - $START_TIME))
 echo "Elapsed time (s):" 
 echo $ELAPSED_TIME
 
-source deactivate
-
 """
 
 psi4_slurm_array_script="""#!/bin/bash -l
 #SBATCH -p normal
 #SBATCH -J psi4
 #SBATCH -N 1
-#SBATCH --exclusive
-####SBATCH -n 20
-####SBATCH --mem-per-cpu=9000
+####SBATCH --exclusive
+#SBATCH -n 10
+#SBATCH --mem-per-cpu=9000
 #SBATCH --time=00-06:00:00
 #SBATCH --array=0-{last_job_num}
 
 ARCPATH=/home/gridsan/kspieker/RMG/ARC
 RMGPATH=/home/gridsan/kspieker/RMG/RMG-Py
-ACSPATH=/home/gridsan/kspieker/ENI/ACS
+ACSPATH=/home/gridsan/kspieker/RMG/ACS
 export PYTHONPATH=$PYTHONPATH:$RMGPATH
 export PYTHONPATH=$PYTHONPATH:$ARCPATH
 export PYTHONPATH=$PYTHONPATH:$ACSPATH
@@ -443,8 +451,6 @@ echo "============================================================"
 
 source activate arc_env
 
-python /home/gridsan/kspieker/ENI/ACS/acs/screening/run_screening.py $FILE
-
-source deactivate
+python /home/gridsan/kspieker/RMG/ACS/acs/screening/run_screening.py $FILE
 
 """
