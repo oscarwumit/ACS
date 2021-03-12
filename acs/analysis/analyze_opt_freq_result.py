@@ -277,7 +277,7 @@ def main():
         # todo: deal with non cbs-qb3 methods
         # todo: deal with other solvation correction methods
         level_of_theory = opt_project_info['level_of_theory']['fine_opt_freq']
-        if level_of_theory.lower() not in ['cbs-qb3', 'wb97xd/def2svp', 'wb97m-v/def2-tzvp']:
+        if level_of_theory.lower() not in ['cbs-qb3', 'wb97xd/def2svp', 'wb97m-v/def2-tzvp', 'wb97x-d3/def2-tzvp']:
             raise NotImplementedError
         # todo: don't need solvation so comment this out...
         # solvation_method = opt_project_info['level_of_theory']['solv_correction']
