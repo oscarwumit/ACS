@@ -6,7 +6,7 @@
 
 ARCPATH=/home/gridsan/kspieker/RMG/ARC
 RMGPATH=/home/gridsan/kspieker/RMG/RMG-Py
-ACSPATH=/home/gridsan/kspieker/ENI/ACS
+ACSPATH=/home/gridsan/kspieker/RMG/ACS
 export PYTHONPATH=$PYTHONPATH:$RMGPATH
 export PYTHONPATH=$PYTHONPATH:$ARCPATH
 export PYTHONPATH=$PYTHONPATH:$ACSPATH
@@ -15,6 +15,4 @@ export PSI_SCRATCH=/home/gridsan/kspieker/scratch/psi4
 
 source activate arc_env
 
-python /home/gridsan/kspieker/ENI/ACS/acs/screening/run_screening.py  $1
-
-source deactivate
+python /home/gridsan/kspieker/RMG/ACS/acs/screening/run_screening.py  $1

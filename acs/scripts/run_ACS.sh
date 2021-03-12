@@ -1,7 +1,7 @@
 # step 0: define paths
 ##############################################
 # only need to change this path
-ACS_PATH="/home/gridsan/kspieker/ENI/ACS/"
+ACS_PATH="/home/gridsan/kspieker/RMG/ACS/"
 
 ##############################################
 
