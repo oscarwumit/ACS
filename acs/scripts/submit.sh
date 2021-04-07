@@ -21,7 +21,7 @@ echo "Current directory : $(pwd)"
 echo "============================================================"
 
 
-bash /home/gridsan/kspieker/RMG/ACS/acs/scripts/run_ACS.sh
+bash /home/gridsan/yunsie/git_repo/ACS/acs/scripts/run_ACS.sh
 
 
 ELAPSED_TIME=$(($SECONDS - $START_TIME))

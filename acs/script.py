@@ -257,7 +257,7 @@ echo "============================================================"
 SubmitDir=`pwd`
 echo $Submit
 
-export QCSCRATCH=/home/gridsan/kspieker/scratch/$SLURM_JOB_NAME-$SLURM_JOB_ID
+export QCSCRATCH=/tmp/yunsie/$SLURM_JOB_NAME-$SLURM_JOB_ID
 
 echo "QCSCRATCH : $QCSCRATCH"
 mkdir -p $QCSCRATCH
@@ -430,13 +430,13 @@ psi4_slurm_array_script="""#!/bin/bash -l
 #SBATCH --time=00-06:00:00
 #SBATCH --array=0-{last_job_num}
 
-ARCPATH=/home/gridsan/kspieker/RMG/ARC
-RMGPATH=/home/gridsan/kspieker/RMG/RMG-Py
-ACSPATH=/home/gridsan/kspieker/RMG/ACS
+ARCPATH=/home/gridsan/yunsie/git_repo/ARC
+RMGPATH=/home/gridsan/yunsie/git_repo/RMG-Py
+ACSPATH=/home/gridsan/yunsie/git_repo/ACS
 export PYTHONPATH=$PYTHONPATH:$RMGPATH
 export PYTHONPATH=$PYTHONPATH:$ARCPATH
 export PYTHONPATH=$PYTHONPATH:$ACSPATH
-export PSI_SCRATCH=/home/gridsan/kspieker/scratch/psi4
+export PSI_SCRATCH=/home/gridsan/yunsie/scratch/psi4
 
 FILE=$(echo $SLURM_ARRAY_TASK_ID/*.yml)
 
@@ -451,6 +451,6 @@ echo "============================================================"
 
 source activate arc_env
 
-python /home/gridsan/kspieker/RMG/ACS/acs/screening/run_screening.py $FILE
+python /home/gridsan/yunsie/git_repo/ACS/acs/screening/run_screening.py $FILE
 
 """
