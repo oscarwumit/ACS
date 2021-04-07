@@ -232,9 +232,9 @@ def main():
         mkdir(opt_fine_dir)
 
         level_of_theory = opt_project_info['level_of_theory']['fine_opt_freq']
-        if level_of_theory.lower() not in ['cbs-qb3']:
-            if multiplicity == 2:
-                level_of_theory = 'u' + level_of_theory
+        # if level_of_theory.lower() not in ['cbs-qb3']:
+        #     if multiplicity == 2:
+        #         level_of_theory = 'u' + level_of_theory
 
         for i, fingerprint in enumerate(opt_project_info['conformer_to_fine_opt_hash_ids']):
             fine_opt_input_file_name = str(i) + '_' + str(fingerprint) + '_geom_fine_opt_freq.qcin'
