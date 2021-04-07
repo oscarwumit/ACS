@@ -355,7 +355,7 @@ orca_slurm_array_script = """#!/bin/bash -l
 #SBATCH --time=5-0:00:00
 ##SBATCH --exclusive 
 #SBATCH --array=0-{last_job_num}
-#SBATCH --mem-per-cpu=8000
+#SBATCH --mem-per-cpu=14000
 
 jnum=$SLURM_ARRAY_TASK_ID
 fin=$(echo ${{jnum}}_*.in)
@@ -369,7 +369,6 @@ echo "Running on node : $SLURMD_NODENAME"
 echo "Current directory : $(pwd)"
 echo "============================================================"
 
-SubmitDir=`pwd`
 
 #openmpi
 export PATH=/home/gridsan/groups/RMG/Software/openmpi-3.1.4/bin:$PATH
@@ -384,7 +383,15 @@ export LD_LIBRARY_PATH=/home/gridsan/groups/RMG/Software/orca_4_2_1_linux_x86-64
 echo "orcaversion"
 which orca
 
+SubmitDir=`pwd`
+WorkDir=~/scratch/$SLURM_JOB_NAME-$SLURM_JOB_ID
+mkdir -p $WorkDir
+cd $WorkDir
+cp $SubmitDir/$input.in .
+
 $orcadir/orca $input.in > $input.log
+cp $input.log $SubmitDir/$input.log
+rm -rf $WorkDir
 """
 
 # used to generate conformers and analzye results

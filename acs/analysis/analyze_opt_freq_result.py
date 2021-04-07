@@ -314,7 +314,7 @@ def main():
                 orca_dlpno_input_file = gen_orca_dlpno_sp_input_file(xyz_str=xyz_str,
                                                                      charge=charge,
                                                                      multiplicity=multiplicity,
-                                                                     memory_mb=7000,
+                                                                     memory_mb=13800,
                                                                      cpu_threads=20,
                                                                      )
 
