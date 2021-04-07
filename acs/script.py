@@ -417,7 +417,7 @@ echo "Current directory : $(pwd)"
 echo "============================================================"
 
 # Activate Python environment and run program
-source activate arc_env
+source activate ACS_env
 
 python {script} {input}
 
@@ -456,7 +456,7 @@ echo "Running on node : $SLURMD_NODENAME"
 echo "Current directory : $(pwd)"
 echo "============================================================"
 
-source activate arc_env
+source activate ACS_env
 
 python /home/gridsan/yunsie/git_repo/ACS/acs/screening/run_screening.py $FILE
 
