@@ -247,7 +247,7 @@ def main():
                                                                   xyz_str=xyz_str,
                                                                   charge=charge,
                                                                   multiplicity=multiplicity,
-                                                                  memory_mb=300000,
+                                                                  memory_mb=71500,
                                                                   cpu_threads=40,
                                                                   is_ts=is_ts,
                                                                   level_of_theory=level_of_theory,
