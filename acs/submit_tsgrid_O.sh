@@ -7,7 +7,7 @@ ARCPATH=~/Software/ARC
 RMGPATH=~/Software/RMG-Py
 export PYTHONPATH=$PYTHONPATH:$RMGPATH
 
-source activate arc_env
+source activate acs_env
 
 python /home/gridsan/oscarwu/GRPAPI/imipramine_site_5_2d_grid_sp/TS_confgrid.py  $1
 

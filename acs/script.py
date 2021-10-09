@@ -410,7 +410,7 @@ echo "Current directory : $(pwd)"
 echo "============================================================"
 
 # Activate Python environment and run program
-source activate arc_env
+source activate acs_env
 
 python {script} {input}
 
@@ -449,7 +449,7 @@ echo "Running on node : $SLURMD_NODENAME"
 echo "Current directory : $(pwd)"
 echo "============================================================"
 
-source activate arc_env
+source activate acs_env
 
 python /home/gridsan/kspieker/RMG/ACS/acs/screening/run_screening.py $FILE
 

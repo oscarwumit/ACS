@@ -13,6 +13,6 @@ export PYTHONPATH=$PYTHONPATH:$ACSPATH
 export PSI_SCRATCH=/home/gridsan/kspieker/scratch/psi4
 
 
-source activate arc_env
+source activate acs_env
 
 python /home/gridsan/kspieker/RMG/ACS/acs/screening/run_screening.py  $1

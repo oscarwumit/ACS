@@ -28,7 +28,7 @@ step9="${ACS_PATH}acs/analysis/analyze_sp_result.py"
 step10="${ACS_PATH}acs/analysis/calc_mstst_rate.py"
 
 
-source activate arc_env
+source activate acs_env
 
 # step 1: generate conformers
 echo "Step 1: Generating conformers..."
