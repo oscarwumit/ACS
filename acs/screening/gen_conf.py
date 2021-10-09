@@ -20,7 +20,7 @@ from acs.converter.geom import (xyz_str_to_xyz_dict,
 from acs.script import default_conformer_info_dict_for_initial_sp_screening, \
     default_job_info_dict_for_initial_sp_screening
 from acs.common import read_yaml_file, write_yaml_file
-import pybel
+from openbabel import pybel
 
 
 def get_separable_angle_list(conf,

@@ -8,7 +8,7 @@ import unittest
 
 import numpy as np
 from rdkit import Chem
-import pybel
+from openbabel import pybel
 
 from acs.backend import rdk
 

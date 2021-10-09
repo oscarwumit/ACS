@@ -23,7 +23,7 @@ from rdkit.Chem.rdchem import BondType, Conformer, Mol, RWMol
 # For Linux,
 # rdkit - 2020.03.3 from rdkit channel
 # openbabel - 2.4.1 from rmg channel does not work
-import openbabel as ob
+from openbabel import openbabel as ob
 
 # Bond order dictionary for RDKit, numbers are the bond order.
 # Note: There is a bond type 'OTHER' which may be helpful to treat TSs
