@@ -169,29 +169,49 @@ def gen_qchem_optfreq_input_file(name: str,
                                  level_of_theory: str,
                                  comment: str = '',
                                  ) -> str:
-    # todo: add TS syntax for qchem
-    # if is_ts:
-    #     title_card = "#p opt=(calcall,ts,noeigentest,maxcycles=120) freq guess=mix scf=xqc iop(2/9=2000)"
-    # else:
-    #     title_card = "#p opt=(calcall,noeigentest,maxcycles=120) freq guess=mix scf=xqc iop(2/9=2000)"
-
-    script = f"""
+    if is_ts:
+        script = f"""
 $molecule
 {charge} {multiplicity}
 {xyz_str}
 $end
 
 $rem
-   JOBTYPE                   Opt
+   JOBTYPE                   FREQ
    METHOD                    {level_of_theory.split('/')[0]}
    BASIS                     {level_of_theory.split('/')[1]}
-   SCF_ALGORITHM             DIIS_GDM
-   MAX_DIIS_CYCLES           50
-   THRESH_DIIS_SWITCH        11
-   MAX_SCF_CYCLES            150
+   UNRESTRICTED              TRUE
+   SCF_ALGORITHM             DIIS
+   MAX_SCF_CYCLES            100
    SCF_CONVERGENCE           8
-   THRESH                    11
-   MEM_TOTAL                 {memory_mb}
+   SYM_IGNORE                TRUE
+   SYMMETRY                  FALSE
+   WAVEFUNCTION_ANALYSIS     FALSE
+$end
+
+@@@
+
+$molecule
+   read
+$ends
+
+$rem
+   JOBTYPE                   TS
+   METHOD                    {level_of_theory.split('/')[0]}
+   BASIS                     {level_of_theory.split('/')[1]}
+   UNRESTRICTED              TRUE
+   SCF_GUESS                 READ
+   GEOM_OPT_HESSIAN          READ
+   SCF_ALGORITHM             DIIS
+   MAX_SCF_CYCLES            100
+   SCF_CONVERGENCE           8
+   SYM_IGNORE                TRUE
+   SYMMETRY                  FALSE
+   GEOM_OPT_MAX_CYCLES       100
+   GEOM_OPT_TOL_GRADIENT     100
+   GEOM_OPT_TOL_DISPLACEMENT 400
+   GEOM_OPT_TOL_ENERGY       33
+   WAVEFUNCTION_ANALYSIS     FALSE
 $end
 
 @@@
@@ -204,17 +224,65 @@ $rem
    JOBTYPE                   FREQ
    METHOD                    {level_of_theory.split('/')[0]}
    BASIS                     {level_of_theory.split('/')[1]}
-   SCF_ALGORITHM             DIIS_GDM
-   MAX_DIIS_CYCLES           50
-   THRESH_DIIS_SWITCH        11
-   MAX_SCF_CYCLES            150
+   UNRESTRICTED              TRUE
+   SCF_GUESS                 READ
+   SCF_ALGORITHM             DIIS
+   MAX_SCF_CYCLES            100
    SCF_CONVERGENCE           8
-   THRESH                    11
-   MEM_TOTAL                 {memory_mb}
+   SYM_IGNORE                TRUE
+   SYMMETRY                  FALSE
+   WAVEFUNCTION_ANALYSIS     FALSE
+$end
+
+"""
+
+    else:
+        script = f"""
+$molecule
+{charge} {multiplicity}
+{xyz_str}
+$end
+
+$rem
+   JOBTYPE                   Opt
+   METHOD                    {level_of_theory.split('/')[0]}
+   BASIS                     {level_of_theory.split('/')[1]}
+   UNRESTRICTED              TRUE
+   SCF_ALGORITHM             DIIS
+   MAX_SCF_CYCLES            100
+   SCF_CONVERGENCE           8
+   SYM_IGNORE                TRUE
+   SYMMETRY                  FALSE
+   GEOM_OPT_MAX_CYCLES       100
+   GEOM_OPT_TOL_GRADIENT     100
+   GEOM_OPT_TOL_DISPLACEMENT 400
+   GEOM_OPT_TOL_ENERGY       33
+   WAVEFUNCTION_ANALYSIS     FALSE
+$end
+
+@@@
+
+$molecule
+   read
+$end
+
+$rem
+   JOBTYPE                   FREQ
+   METHOD                    {level_of_theory.split('/')[0]}
+   BASIS                     {level_of_theory.split('/')[1]}
+   UNRESTRICTED              TRUE
+   SCF_GUESS                 READ
+   SCF_ALGORITHM             DIIS
+   MAX_SCF_CYCLES            100
+   SCF_CONVERGENCE           8
+   SYM_IGNORE                TRUE
+   SYMMETRY                  FALSE
+   WAVEFUNCTION_ANALYSIS     FALSE
 $end
 
 
 """
+
     return script
 
 
