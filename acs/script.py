@@ -230,10 +230,10 @@ rm -rf $GAUSS_SCRDIR
 
 qchem53_slurm_array_script = """#!/bin/bash -l
 #SBATCH -p normal
-#SBATCH -J opt{name}
+#SBATCH -J opt_{name}
 #SBATCH -N 1
 #SBATCH -n 8
-#SBATCH --time=5-0:00:00
+#SBATCH --time=1-0:00:00
 #SBATCH --mem-per-cpu=9000
 #SBATCH --array=0-{last_job_num}
 
