@@ -254,6 +254,8 @@ echo "Running on node : $SLURMD_NODENAME"
 echo "Current directory : $(pwd)"
 echo "============================================================"
 
+START_TIME=$SECONDS
+
 SubmitDir=`pwd`
 echo $Submit
 
@@ -274,6 +276,10 @@ cp $input.log "$SubmitDir/"
 cd $SubmitDir
 
 rm -rf $QCSCRATCH
+
+ELAPSED_TIME=$(($SECONDS - $START_TIME))
+echo "Elapsed time (s):" 
+echo $ELAPSED_TIME
 
 """
 
@@ -449,8 +455,14 @@ echo "Running on node : $SLURMD_NODENAME"
 echo "Current directory : $(pwd)"
 echo "============================================================"
 
+START_TIME=$SECONDS
+
 source activate acs_env
 
 python /home/gridsan/kspieker/RMG/ACS/acs/screening/run_screening.py $FILE
+
+ELAPSED_TIME=$(($SECONDS - $START_TIME))
+echo "Elapsed time (s):" 
+echo $ELAPSED_TIME
 
 """
