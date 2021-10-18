@@ -229,12 +229,11 @@ rm -rf $GAUSS_SCRDIR
 
 
 qchem53_slurm_array_script = """#!/bin/bash -l
-#SBATCH -p normal
 #SBATCH -J opt_{name}
 #SBATCH -N 1
-#SBATCH -n 8
+#SBATCH -n 12
 #SBATCH --time=1-0:00:00
-#SBATCH --mem-per-cpu=9000
+#SBATCH --mem-per-cpu=4096
 #SBATCH --array=0-{last_job_num}
 
 # export qchem environment variables
@@ -395,14 +394,13 @@ $orcadir/orca $input.in > $input.log
 
 # used to generate conformers and analzye results
 generic_submit_script = """#!/bin/bash -l
-#SBATCH -p normal
 #SBATCH -J {job_name}
 #SBATCH -o {stdout}.%N.%j.out
 #SBATCH -e {stderr}.%N.%j.err
 #SBATCH -N 1
-#SBATCH -n 4
+#SBATCH -n 2
 #SBATCH --time=00-02:00:00 
-#SBATCH --mem-per-cpu=2000
+#SBATCH --mem-per-cpu=4096
 
 START_TIME=$SECONDS
 
@@ -427,12 +425,11 @@ echo $ELAPSED_TIME
 """
 
 psi4_slurm_array_script="""#!/bin/bash -l
-#SBATCH -p normal
 #SBATCH -J psi4
 #SBATCH -N 1
-####SBATCH --exclusive
-#SBATCH -n 10
-#SBATCH --mem-per-cpu=9000
+#SBATCH --exclusive
+####SBATCH -n 12
+####SBATCH --mem-per-cpu=4096
 #SBATCH --time=00-06:00:00
 #SBATCH --array=0-{last_job_num}
 
