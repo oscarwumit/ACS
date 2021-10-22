@@ -249,8 +249,12 @@ def main():
 
         rdkitts = rdkitts.FromRDMol(rw_mol)
     # 1.1.b Process non-TS conformer
+    # no need to guess connectivity from OpenBabel. Instead, use the SMILES for stable species
     else:
-        rdkitmol = RDKitMol.FromOBMol(pybel_mol.OBMol)
+        smi = project_info['species']['smiles']
+        params = Chem.SmilesParserParams()
+        params.removeHs = False
+        rdkitmol = RDKitMol(Chem.MolFromSmiles(smi, params))
 
     # 1.2 Use RDKit to generate conformers
     # 1.2.1.a Initialize a TS conformer instance
