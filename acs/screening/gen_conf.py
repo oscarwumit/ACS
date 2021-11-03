@@ -218,34 +218,20 @@ def main():
     # 1.1.a Process TS conformer
     if is_ts:
         # 1.1.a.1  Perceive TS
-        rdkitts = RDKitTS.FromOBMol(pybel_mol.OBMol)
-        rdkitts.EmbedConformer()
-        conf = rdkitts.GetConformer()
-        conf.SetPositions(xyz_dict['coords'])
+        xyz_str = xyz_dict_to_xyz_str(xyz_dict)
+        ts_mol = RDKitTS.FromXYZ(xyz=xyz_str, backend='openbabel', header=False)
+        multiplicity = project_info['species']['multiplicity']
+        ts_mol.SaturateMol(multiplicity=multiplicity)  # saturate the TS bonds
 
-        # 1.1.a.2 Set the missing bonds existing in the TS
-        bonds = list()
-        threshold = 1.6
+        rsmi = project_info['species']['rsmi']
+        psmi = project_info['species']['psmi']
+        formed, broken = get_formed_and_broken_bonds(RDKitMol.FromSmiles(rsmi), RDKitMol.FromSmiles(psmi))
+        bonds = formed + broken
 
-        if not bonds:
-            dist_mat = np.triu(rdkitts.GetDistanceMatrix())
-            covl_mat = rdkitts.GetCovalentMatrix()
-
-            for multiplier in np.arange(1.1, threshold, 0.1):
-                atom1s, atom2s = np.where((dist_mat - multiplier * covl_mat) < 0)
-                bonds = [(int(atom1s[i]), int(atom2s[i])) for i in range(len(atom1s))]
-            if not bonds:
-                raise ValueError('Cannot id TS bond!')
-
-        # 1.1.a.3 Overwrite the RDKitTS with new bonding info
-        rw_mol = rdkitts.ToRDMol()
-
-        for bond in bonds:
-            # Use BondType.OTHER if you want to avoid to be counted as a torsional mode
-            # If you want to include it, please use BondType.SINGLE
-            rw_mol.AddBond(*bond, Chem.BondType.OTHER)
-
-        rdkitts = rdkitts.FromRDMol(rw_mol)
+        # assign all bonds to the TS
+        # by creating bonds at the reaction core, it prevents this part from being rotated
+        bonds = [bond for bond in bonds if not ts_mol.GetBondBetweenAtoms(*bond)]
+        ts_fake_mol = ts_mol.AddRedundantBonds(bonds=bonds)
     # 1.1.b Process non-TS conformer
     # no need to guess connectivity from OpenBabel. Instead, use the SMILES for stable species
     else:
@@ -255,8 +241,7 @@ def main():
     # 1.2 Use RDKit to generate conformers
     # 1.2.1.a Initialize a TS conformer instance
     if is_ts:
-        rdkitts.EmbedConformer()
-        conf = rdkitts.GetConformer()
+        conf = ts_fake_mol.GetConformer()
     # 1.2.1.b Initialize a non-TS conformer instance
     else:
         rdkitmol.EmbedConformer()
@@ -271,7 +256,7 @@ def main():
     ######################################
     if not torsions:
         if is_ts:
-            torsions = rdkitts.GetTorsionalModes()
+            torsions = ts_fake_mol.GetTorsionalModes(excludeMethyl=False)
         else:
             torsions = rdkitmol.GetTorsionalModes(excludeMethyl=False)
         # print(f'RDKit perceived torsions: {torsions}')
@@ -280,14 +265,13 @@ def main():
     num_torsions = len(torsions)
     original_angles = conf.GetAllTorsionsDeg()
     # # print('Torsions highlighted in the molecule:')
-    # display(rdkitts)
     # print(f'The original dihedral angles is: {original_angles}')
 
     # Save to dict
     project_info['species']['1d_torsions'] = torsions
     if is_ts:
         project_info['species']['coord']['connectivity'] = tuple([sorted((bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()))
-                                                                  for bond in rdkitts.GetBonds()])
+                                                                  for bond in ts_fake_mol.GetBonds()])
     else:
         project_info['species']['coord']['connectivity'] = tuple([sorted((bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()))
                                                                   for bond in rdkitmol.GetBonds()])
