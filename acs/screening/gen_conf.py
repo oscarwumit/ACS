@@ -13,7 +13,6 @@ import numpy as np
 from rdkit import Chem
 from copy import deepcopy
 
-from acs.backend.rdk import RDKitConf, RDKitTS, RDKitMol
 from acs.converter.geom import (xyz_str_to_xyz_dict,
                                 xyz_dict_to_xyz_str,
                                 xyz_dict_to_xyz_file)
@@ -22,6 +21,8 @@ from acs.script import default_conformer_info_dict_for_initial_sp_screening, \
 from acs.common import read_yaml_file, write_yaml_file
 from openbabel import pybel
 
+from rdmc.mol import RDKitMol, RDKitTS
+from rdmc.ts import get_formed_and_broken_bonds
 
 def get_separable_angle_list(conf,
                              torsions,
@@ -214,9 +215,6 @@ def main():
     xyz_file = f"{len(xyz_str.splitlines())}\n\n{xyz_str}"
 
     # 1. Generate conformers
-    # 1.1 Pybel (openbabel) is used to roughly perceive the molecular connectivity
-    pybel_mol = pybel.readstring('xyz', xyz_file)
-
     # 1.1.a Process TS conformer
     if is_ts:
         # 1.1.a.1  Perceive TS
@@ -252,9 +250,7 @@ def main():
     # no need to guess connectivity from OpenBabel. Instead, use the SMILES for stable species
     else:
         smi = project_info['species']['smiles']
-        params = Chem.SmilesParserParams()
-        params.removeHs = False
-        rdkitmol = RDKitMol(Chem.MolFromSmiles(smi, params))
+        rdkitmol = RDKitMol.FromSmiles(smi)
 
     # 1.2 Use RDKit to generate conformers
     # 1.2.1.a Initialize a TS conformer instance
@@ -264,9 +260,8 @@ def main():
     # 1.2.1.b Initialize a non-TS conformer instance
     else:
         rdkitmol.EmbedConformer()
+        rdkitmol.SetPositions(xyz_dict['coords'])
         conf = rdkitmol.GetConformer()
-
-    conf.SetPositions(xyz_dict['coords'])
 
     # 1.2.2 Get the torsional mode and the original angles
     # You can set the correct (all) torsions, otherwise RDKit will perceive.
@@ -278,7 +273,7 @@ def main():
         if is_ts:
             torsions = rdkitts.GetTorsionalModes()
         else:
-            torsions = rdkitmol.GetTorsionalModes()
+            torsions = rdkitmol.GetTorsionalModes(excludeMethyl=False)
         # print(f'RDKit perceived torsions: {torsions}')
 
     conf.SetTorsionalModes(torsions)
@@ -354,5 +349,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
