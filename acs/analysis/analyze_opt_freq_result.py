@@ -101,7 +101,8 @@ def main():
                 fingerprint_to_all_opt_log_info_dict[fingerprint] = \
                     process_opt_freq_output(logfile=opt_output_file_path, ess_software=ESS_SOFTWARE, is_ts=is_ts)
                 normal_termination_conformer_hash_ids.append(fingerprint)
-            except ParserError:
+            except ParserError as e:
+                print(f'Parser Error! {e}')
                 crashing_conformer_hash_ids.append(fingerprint)
             except TypeError:
                 crashing_conformer_hash_ids.append(fingerprint)
