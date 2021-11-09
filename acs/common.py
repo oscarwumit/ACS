@@ -485,6 +485,9 @@ def parse_frequencies(path: str,
     freqs = np.array([], np.float64)
     if software.lower() == 'qchem':
         for line in lines:
+            if 'VIBRATIONAL FREQUENCIES (CM**-1)' in line:
+                # reset freqs for each frequency block so that we only return the last frequency block
+                freqs = np.array([], np.float64)
             if ' Frequency:' in line:
                 items = line.split()
                 for i, item in enumerate(items):
