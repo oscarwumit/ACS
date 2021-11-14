@@ -21,8 +21,8 @@ from acs.script import default_conformer_info_dict_for_initial_sp_screening, \
 from acs.common import read_yaml_file, write_yaml_file
 from openbabel import pybel
 
-from rdmc.mol import RDKitMol, RDKitTS
-from rdmc.ts import get_formed_and_broken_bonds
+from rdmc.mol import RDKitMol
+from rdmc.ts import get_all_changing_bonds, get_formed_and_broken_bonds
 
 def get_separable_angle_list(conf,
                              torsions,
@@ -217,21 +217,30 @@ def main():
     # 1. Generate conformers
     # 1.1.a Process TS conformer
     if is_ts:
-        # 1.1.a.1  Perceive TS
-        xyz_str = xyz_dict_to_xyz_str(xyz_dict)
-        ts_mol = RDKitTS.FromXYZ(xyz=xyz_str, backend='openbabel', header=False)
-        multiplicity = project_info['species']['multiplicity']
-        ts_mol.SaturateMol(multiplicity=multiplicity)  # saturate the TS bonds
-
+        # create reactant and product to infer TS bonds from
         rsmi = project_info['species']['rsmi']
-        psmi = project_info['species']['psmi']
-        formed, broken = get_formed_and_broken_bonds(RDKitMol.FromSmiles(rsmi), RDKitMol.FromSmiles(psmi))
-        bonds = formed + broken
+        r_complex = RDKitMol.FromSmiles(rsmi)
 
-        # assign all bonds to the TS
-        # by creating bonds at the reaction core, it prevents this part from being rotated
-        bonds = [bond for bond in bonds if not ts_mol.GetBondBetweenAtoms(*bond)]
-        ts_fake_mol = ts_mol.AddRedundantBonds(bonds=bonds)
+        psmi = project_info['species']['psmi']
+        p_complex = RDKitMol.FromSmiles(psmi)
+
+        ts_mol = r_complex.Copy()
+        xyz_str = xyz_dict_to_xyz_str(xyz_dict)
+        ts_mol.SetPositions(xyz_str, header=False)
+        multiplicity = project_info['species']['multiplicity']
+        ts_mol.SaturateMol(multiplicity=multiplicity)  # saturate the bonds
+
+        # get all bonds that changed during the reaction
+        formed_bonds, broken_bonds, change_bonds = get_all_changing_bonds(r_complex, p_complex)
+        ts_fake_mol = ts_mol.Copy()
+        for bond in change_bonds:
+            bond1 = r_complex.GetBondBetweenAtoms(*bond)
+            bond2 = p_complex.GetBondBetweenAtoms(*bond)
+            if bond1.GetBondTypeAsDouble() > bond2.GetBondTypeAsDouble():
+                ts_fake_mol.GetBondBetweenAtoms(*bond).SetBondType(bond1.GetBondType())
+            else:
+                ts_fake_mol.GetBondBetweenAtoms(*bond).SetBondType(bond2.GetBondType())
+        ts_fake_mol = ts_fake_mol.AddRedundantBonds(bonds=formed_bonds)
     # 1.1.b Process non-TS conformer
     # no need to guess connectivity from OpenBabel. Instead, use the SMILES for stable species
     else:
