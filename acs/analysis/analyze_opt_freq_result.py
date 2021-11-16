@@ -147,6 +147,13 @@ def main():
             opt_project_info['conformers'][fingerprint]['energy']['end_of_opt'] = \
                 fingerprint_to_all_opt_log_info_dict[fingerprint]['electronic_energy']['hartree']
 
+            # store the frequencies from the opt job
+            # currently, running a fine_opt job will override these values
+            opt_project_info['conformers'][fingerprint]['frequencies'] = \
+                fingerprint_to_all_opt_log_info_dict[fingerprint]['freq'][0]
+            opt_project_info['conformers'][fingerprint]['negative_frequencies'] = \
+                fingerprint_to_all_opt_log_info_dict[fingerprint]['freq'][1]
+
     # (b) Assume we are analyzing fine opt results
     # todo: cosolidate code with regular opt
     else:
