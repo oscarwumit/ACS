@@ -147,7 +147,7 @@ def conformers_by_change_torsions(conf: 'RDKitConf',
             bookkeep['conformers'][hash_key].update({
                 'xyz_str': xyz_str,
                 'arc_xyz': xyz_dict,
-                'is_colliding': conf.HasCollidingAtoms() if on_the_fly_check else None,
+                'is_colliding': conf.HasCollidingAtoms(threshold=bookkeep['vdw_collision_threshold']) if on_the_fly_check else None,
                 'is_crashing': None,
             })
     else:
@@ -162,7 +162,7 @@ def conformers_by_change_torsions(conf: 'RDKitConf',
         bookkeep['conformers'][hash_key].update({
             'xyz_str': xyz_str,
             'arc_xyz': xyz_dict,
-            'is_colliding': conf.HasCollidingAtoms() if on_the_fly_check else None,
+            'is_colliding': conf.HasCollidingAtoms(threshold=bookkeep['vdw_collision_threshold']) if on_the_fly_check else None,
             'is_crashing': None,
         })
 
@@ -268,7 +268,7 @@ def main():
             torsions = ts_fake_mol.GetTorsionalModes(excludeMethyl=False)
         else:
             torsions = rdkitmol.GetTorsionalModes(excludeMethyl=False)
-        # print(f'RDKit perceived torsions: {torsions}')
+        print(f'RDKit perceived torsions: {torsions}')
 
     conf.SetTorsionalModes(torsions)
     num_torsions = len(torsions)

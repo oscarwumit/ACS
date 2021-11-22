@@ -268,7 +268,7 @@ cd $QCSCRATCH
 
 cp "$SubmitDir/$input.qcin" .
 
-qchem -nt 8 $input.qcin > $input.log
+qchem -nt 12 $input.qcin > $input.log
 
 cp $input.log "$SubmitDir/"
 
@@ -427,9 +427,9 @@ echo $ELAPSED_TIME
 psi4_slurm_array_script="""#!/bin/bash -l
 #SBATCH -J psi4
 #SBATCH -N 1
-#SBATCH --exclusive
-####SBATCH -n 12
-####SBATCH --mem-per-cpu=4096
+#####SBATCH --exclusive
+#SBATCH -n 12
+#SBATCH --mem-per-cpu=6144
 #SBATCH --time=00-06:00:00
 #SBATCH --array=0-{last_job_num}
 
