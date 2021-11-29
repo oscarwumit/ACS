@@ -398,7 +398,7 @@ generic_submit_script = """#!/bin/bash -l
 #SBATCH -o {stdout}.%N.%j.out
 #SBATCH -e {stderr}.%N.%j.err
 #SBATCH -N 1
-#SBATCH -n 2
+#SBATCH -n 1
 #SBATCH --time=00-02:00:00 
 #SBATCH --mem-per-cpu=4096
 
@@ -430,7 +430,7 @@ psi4_slurm_array_script="""#!/bin/bash -l
 #####SBATCH --exclusive
 #SBATCH -n 12
 #SBATCH --mem-per-cpu=6144
-#SBATCH --time=00-06:00:00
+#SBATCH --time=00-10:00:00
 #SBATCH --array=0-{last_job_num}
 
 ARCPATH=/home/gridsan/kspieker/RMG/ARC
