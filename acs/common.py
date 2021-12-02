@@ -286,6 +286,38 @@ $end
     return script
 
 
+def gen_molpro_sp_input_file(xyz_str: str,
+                             method: str,
+                             basis: str,
+                             charge: int,
+                             spin: int,
+                             ) -> str:
+    
+        
+    script = f"""***,name
+memory,1152,m;
+geometry={{angstrom;
+{xyz_str}}}
+
+basis={basis}
+
+int;
+
+{{hf;
+maxit,300;
+wf,spin={spin},charge={charge};}}
+
+{method};
+
+
+---;
+
+
+"""
+
+    return script
+
+
 def read_cosmo_gsolv(path: str,
                      use_hartree: bool = True,
                      ) -> float:

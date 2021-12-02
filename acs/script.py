@@ -283,6 +283,56 @@ echo $ELAPSED_TIME
 """
 
 
+
+molpro_slurm_array_script="""#!/bin/bash
+#SBATCH -J sp_{job_name}
+#SBATCH -N 1
+#SBATCH -n 10
+#SBATCH -t 08:00:00  # HH:MM:SS
+#SBATCH --mem=110000
+###SBATCH -e err-%A-%a.txt
+###SBATCH -o out-%A-%a.txt
+#SBATCH --array=0-{last_job_num}
+
+# export molpro environment variables
+export PATH=/home/gridsan/groups/RMG/Software/molpro:$PATH
+
+job_num=$SLURM_ARRAY_TASK_ID
+input_file=$(echo ${{job_num}}_*.in)
+input=`basename $input_file .in`
+
+echo "============================================================"
+echo "Job ID : $SLURM_JOB_ID"
+echo "Job Name : $SLURM_JOB_NAME"
+echo "task ID: $SLURM_ARRAY_TASK_ID"
+echo "Starting on : $(date)"
+echo "Running on node : $SLURMD_NODENAME"
+echo "Current directory : $(pwd)"
+echo "============================================================"
+
+START_TIME=$SECONDS
+
+SubmitDir=`pwd`
+echo $SubmitDir
+
+sdir=$TMPDIR/molpro/$SLURM_JOB_NAME-$SLURM_JOB_ID
+mkdir -p $sdir
+cd $sdir
+
+cp "$SubmitDir/$input.in" .
+
+molpro -n 10 -d $sdir -o $input.out $input.in
+
+cp $input.out "$SubmitDir/"
+rm -rf $sdir
+
+ELAPSED_TIME=$(($SECONDS - $START_TIME))
+echo "Elapsed time (s):"
+echo $ELAPSED_TIME
+
+"""
+
+
 cosmo_slurm_array_script = """#!/bin/bash -l
 #SBATCH -p normal
 #SBATCH -J cosmo
