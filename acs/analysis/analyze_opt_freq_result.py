@@ -139,6 +139,9 @@ def main():
         opt_project_info['conformers'][fingerprint]['negative_frequencies'] = \
             fingerprint_to_all_opt_log_info_dict[fingerprint]['freq'][1]
 
+    valid_conformer_hash_ids = deepcopy(checked_conformer_hash_ids)
+    opt_project_info['valid_conformer_hash_ids'] = valid_conformer_hash_ids
+
     # 2. Generate input files for high level sp
     sp_dir = os.path.join(project_dir, 'sp')
     mkdir(sp_dir)
