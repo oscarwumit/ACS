@@ -47,10 +47,18 @@ def main():
     valid_conformer_hash_ids = sp_project_info['valid_conformer_hash_ids']
     final_valid_conformer_hash_ids = list(valid_conformer_hash_ids)
     for fingerprint in valid_conformer_hash_ids:
-        sp_file_path = sp_project_info['conformers'][fingerprint]['file_path']['output']['sp_after_opt']
+        sp_input_file_path = sp_project_info['conformers'][fingerprint]['file_path']['input']['sp_after_opt']
+        dir_name, file_name = os.path.split(sp_input_file_path)
+        file_basename, file_extension = os.path.splitext(file_name)
+        new_file_name = file_basename + '.out'
+        sp_output_file_path = os.path.join(dir_name, new_file_name)
+        if not os.path.exists(sp_output_file_path):
+            raise
+        sp_project_info['conformers'][fingerprint]['file_path']['output']['sp_after_opt'] = sp_output_file_path
         try:
-            e_elect_dict = get_e_elect_from_log(sp_file_path)
+            e_elect_dict = get_e_elect_from_log(sp_output_file_path)
         except (FileNotFoundError, ParserError):
+            print(f'Removing conformer {fingerprint} from the valid conformer hash ids')
             final_valid_conformer_hash_ids.remove(fingerprint)
             continue
         sp_project_info['conformers'][fingerprint]['energy']['sp_after_opt'] = e_elect_dict['hartree']
