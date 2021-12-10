@@ -105,12 +105,13 @@ def conformers_by_change_torsions(conf: 'RDKitConf',
 
     ref_xyz_dict = bookkeep['species']['coord']['arc_xyz']
     n_torsions = len(torsions)
-    if n_torsions not in (0, 1, 2):
+    if n_torsions not in (0, 1, 2, 3):
         raise NotImplementedError
 
     if not n_torsions == 0:
         index_1 = -1
         index_2 = 0
+        index_3 = 0
         lookup = set()
         for angles in angle_mesh:
 
@@ -132,13 +133,20 @@ def conformers_by_change_torsions(conf: 'RDKitConf',
             bookkeep['conformers'][hash_key]['dihedral'][0].append(index_1)
             if n_torsions == 2:
                 bookkeep['conformers'][hash_key]['dihedral'][1].append(index_2)
+            if n_torsions == 3:
+                bookkeep['conformers'][hash_key]['dihedral'][1].append(index_2)
+                bookkeep['conformers'][hash_key]['dihedral'][2].append(index_3)
 
             bookkeep['conformers'][hash_key]['dihedral'][0] = tuple(bookkeep['conformers'][hash_key]['dihedral'][0])
             if n_torsions == 2:
                 bookkeep['conformers'][hash_key]['dihedral'][1] = tuple(bookkeep['conformers'][hash_key]['dihedral'][1])
+            if n_torsions == 3:
+                bookkeep['conformers'][hash_key]['dihedral'][1] = tuple(bookkeep['conformers'][hash_key]['dihedral'][1])
+                bookkeep['conformers'][hash_key]['dihedral'][2] = tuple(bookkeep['conformers'][hash_key]['dihedral'][2])
 
             bookkeep['conformers'][hash_key]['dihedral'] = tuple(bookkeep['conformers'][hash_key]['dihedral'])
             index_2 += 1
+            index_3 += 1
 
             xyz_dict = deepcopy(ref_xyz_dict)
             xyz_list = conf.GetPositions().tolist()
